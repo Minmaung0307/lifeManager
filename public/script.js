@@ -1,11 +1,12 @@
 // --- 1. CONFIGURATION ---
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBKve-zt2uXcOebXvpSPOZt4ZRRL7Esqgk",
+  authDomain: "lifemanager-mm.firebaseapp.com",
+  projectId: "lifemanager-mm",
+  storageBucket: "lifemanager-mm.firebasestorage.app",
+  messagingSenderId: "582617327472",
+  appId: "1:582617327472:web:194b114249e69a273bd1b5",
+  measurementId: "G-V1QK1VMVDT"
 };
 
 firebase.initializeApp(firebaseConfig);
