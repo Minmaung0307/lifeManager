@@ -314,8 +314,12 @@ header {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
+
+  /* Scroll ပြဿနာရှင်းရန် */
   overflow-y: auto;
-  padding-bottom: 100px;
+  padding-bottom: 150px; /* အောက်ဆုံးထိ Scroll ဆွဲလို့ရအောင် နေရာပိုချန်မယ် */
+  max-height: 100%; /* Parent အမြင့်အတိုင်းယူမယ် */
+  align-content: start; /* Items တွေ အပေါ်ကစမယ် */
 }
 .list-layout {
   display: flex;
@@ -816,6 +820,11 @@ textarea:focus {
     padding: 5px;
     margin-left: 5px;
   }
+
+  .grid-layout {
+    grid-template-columns: 1fr; /* တစ်တိုင်တည်း */
+    padding-bottom: 120px;
+  }
 }
 
 .btn-mobile-logout {
@@ -1050,5 +1059,149 @@ textarea:focus {
     opacity: 1;
   }
 }
-
 /* --- ANNOUNCEMENT BANNER Ends --- */
+
+/* --- CARD DESIGN UPDATE --- */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: 0.2s;
+  position: relative;
+  cursor: pointer; /* နှိပ်လို့ရကြောင်းပြ */
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.card-category {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: #eef2ff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  align-self: center;
+}
+
+/* Card Content Clean Up */
+.card-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin: 5px 0;
+  color: var(--text);
+}
+.card-user,
+.card-pass {
+  display: none !important;
+} /* Username/Pass ကို Card ပေါ်မှာ ဖျောက်မယ် */
+
+/* Action Buttons (Right Aligned) */
+.card-actions {
+  display: flex;
+  gap: 5px;
+}
+.card-actions button {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10; /* Card click ထက် အပေါ်ရောက်အောင် */
+}
+.card-actions button:hover {
+  background: white;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* --- VIEW DETAILS MODAL STYLING --- */
+.view-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+.view-box {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #e2e8f0;
+}
+.view-box label {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.copy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.copy-row i {
+  color: var(--primary);
+  cursor: pointer;
+}
+.copy-row span {
+  font-family: monospace;
+  font-size: 15px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.blur-text {
+  filter: blur(5px);
+  cursor: pointer;
+  user-select: none;
+}
+.blur-text.revealed {
+  filter: none;
+  user-select: text;
+}
+
+.badge {
+  background: var(--primary);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.val-text {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+}
+#view-url a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+.note-text {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}

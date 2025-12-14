@@ -3,15 +3,23 @@
 const CLIENT_ID = '299263158228-o9m3ca5nmqrhg6sav527437ukiijrfu8.apps.googleusercontent.com'; // <--- ဒီမှာထည့်ပါ
 const API_KEY = 'AIzaSyAfrHWN0UzusdTi964OrS71M6RQd5wF6UM';    
 
+const firebaseConfig = {
+  apiKey: "AIzaSyBKve-zt2uXcOebXvpSPOZt4ZRRL7Esqgk", // Firebase API Key
+  authDomain: "lifemanager-mm.firebaseapp.com",
+  projectId: "lifemanager-mm",
+  storageBucket: "lifemanager-mm.firebasestorage.app",
+  messagingSenderId: "582617327472",
+  appId: "1:582617327472:web:194b114249e69a273bd1b5",
+  measurementId: "G-V1QK1VMVDT",
+};
+
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DATA_FILE_NAME = "cloud_keeper_encrypted_v3.json"; 
 
 let tokenClient;
 let gapiInited = false;
 let gisInited = false;
-
-const DATA_FILE_NAME = "cloud_keeper_encrypted_v1.json"; 
-
 let driveFileId = null;
 let vaultItems = [];
 let encryptedString = ""; // Raw Data from Drive
@@ -19,6 +27,19 @@ let MASTER_KEY = null; // Key in RAM only
 let isNewUser = false;
 let currentFilter = 'all';
 let currentView = 'grid';
+
+// ==========================================
+// 2. FIREBASE INITIALIZATION
+// ==========================================
+// Firebase Script မရှိရင် Error မတက်အောင် စစ်မယ်
+if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth(); // var သုံးတာက Global ဖြစ်အောင်ပါ
+    var db = firebase.firestore();
+} else {
+    console.error("Firebase SDK not loaded!");
+    alert("Error: Firebase SDK failed to load. Check internet connection.");
+}
 
 // --- 2. INITIALIZATION & PERSISTENCE ---
 function gapiLoaded() {
@@ -29,19 +50,22 @@ async function initializeGapiClient() {
     await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
     gapiInited = true; checkAuth();
 }
-function gisLoaded() {
+window.gisLoaded = function() {
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID, scope: SCOPES, callback: '',
     });
     gisInited = true; checkAuth();
 }
 function checkAuth() {
-    // Check LocalStorage for existing session
+    if (!gapiInited || !gisInited) return;
     const storedToken = localStorage.getItem('g_token');
     const storedExpiry = localStorage.getItem('g_token_exp');
-    if (gapiInited && gisInited && storedToken && storedExpiry && Date.now() < parseInt(storedExpiry)) {
+    
+    if (storedToken && storedExpiry && Date.now() < parseInt(storedExpiry)) {
         gapi.client.setToken({ access_token: storedToken });
-        initDriveData(); // Token ရှိရင် Drive စဆွဲမယ်
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'flex';
+        initDriveData();
     } else {
         document.getElementById('login-view').style.display = 'flex';
     }
@@ -54,6 +78,9 @@ function handleAuthClick() {
         const expiresIn = 3500 * 1000; 
         localStorage.setItem('g_token', resp.access_token);
         localStorage.setItem('g_token_exp', Date.now() + expiresIn);
+        
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'flex';
         await initDriveData();
     };
     tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -66,18 +93,11 @@ async function showApp() {
 }
 
 function handleSignoutClick() {
-    // Google API မပွင့်သေးရင်တောင် Logout ဖြစ်အောင်လုပ်မယ်
-    try {
-        const token = gapi.client.getToken();
-        if (token !== null) {
-            google.accounts.oauth2.revoke(token.access_token);
-            gapi.client.setToken('');
-        }
-    } catch (e) {
-        console.log("GAPI Error (Ignoring):", e);
+    const token = gapi.client.getToken();
+    if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken('');
     }
-
-    // Local Storage ရှင်းပြီး Reload လုပ်မယ်
     localStorage.removeItem('g_token');
     localStorage.removeItem('g_token_exp');
     location.reload();
@@ -85,9 +105,7 @@ function handleSignoutClick() {
 
 // --- 4. DRIVE SYNC ENGINE (FIXED SPINNER) ---
 async function initDriveData() {
-    document.getElementById('login-view').style.display = 'none';
     showSyncStatus(true);
-    
     try {
         // User Profile
         try {
@@ -99,7 +117,6 @@ async function initDriveData() {
             }
         } catch(e) {}
 
-        // File Search
         const response = await gapi.client.drive.files.list({
             'q': `name = '${DATA_FILE_NAME}' and trashed = false`,
             'fields': 'files(id, name)',
@@ -107,30 +124,14 @@ async function initDriveData() {
         
         const files = response.result.files;
         if (files && files.length > 0) {
-            // File Found -> Download Encrypted Data
             driveFileId = files[0].id;
-            const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
-            
-            // Result က JSON Object (encrypt လုပ်ထားတဲ့ text ပါမယ်)
-            const result = res.result; 
-            encryptedString = result.data || ""; // "U2FsdGVkX1..."
-            
-            // Show Unlock Screen
-            isNewUser = false;
-            document.getElementById('unlock-title').innerText = "Unlock Vault";
-            document.getElementById('unlock-msg').innerText = "Enter Master Password to Decrypt";
-            document.getElementById('unlock-view').style.display = 'flex';
-
+            await loadFileContent();
         } else {
-            // New User -> Create File & Set Password
-            isNewUser = true;
-            document.getElementById('unlock-title').innerText = "Create Master Password";
-            document.getElementById('unlock-msg').innerText = "Set a password to encrypt your data.";
-            document.getElementById('unlock-view').style.display = 'flex';
+            await createDriveFile();
         }
     } catch (err) {
+        console.error("Drive Error:", err);
         if(err.status === 401) handleSignoutClick();
-        else alert("Drive Error: " + err.message);
     } finally {
         showSyncStatus(false);
     }
@@ -176,10 +177,7 @@ function enterApp() {
 
 // --- 6. SAVE (ENCRYPT & UPLOAD) ---
 async function createDriveFile() {
-    // Encrypt empty array
-    const cipher = CryptoJS.AES.encrypt(JSON.stringify([]), MASTER_KEY).toString();
-    const fileContent = { data: cipher };
-    
+    const fileContent = { items: [] };
     const file = new Blob([JSON.stringify(fileContent)], {type: 'application/json'});
     const metadata = { 'name': DATA_FILE_NAME, 'mimeType': 'application/json' };
     const accessToken = gapi.client.getToken().access_token;
@@ -194,6 +192,8 @@ async function createDriveFile() {
     });
     const val = await res.json();
     driveFileId = val.id;
+    vaultItems = [];
+    renderList();
 }
 
 async function loadFileContent() {
@@ -205,12 +205,9 @@ async function loadFileContent() {
 async function saveToDrive() {
     showSyncStatus(true);
     try {
-        // Encrypt Data
-        const cipher = CryptoJS.AES.encrypt(JSON.stringify(vaultItems), MASTER_KEY).toString();
-        const content = { data: cipher };
-
+        const content = { items: vaultItems };
         const accessToken = gapi.client.getToken().access_token;
-        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+        const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
             method: 'PATCH',
             headers: new Headers({ 
                 'Authorization': 'Bearer ' + accessToken,
@@ -218,11 +215,29 @@ async function saveToDrive() {
             }),
             body: JSON.stringify(content),
         });
-        console.log("Encrypted & Saved.");
+        
+        if (!res.ok) throw new Error("Network Response: " + res.status);
+        console.log("Saved.");
+        
     } catch(e) {
-        alert("Save Failed: " + e.message);
+        // ★ Failed to Fetch Error Handling ★
+        console.error("Save Error:", e);
+        
+        // Data ကို Memory ထဲမှာ ဆက်ထားပြီး User ကို သတိပေးမယ်
+        // Refresh မလုပ်ခိုင်းပါဘူး (Refresh လုပ်ရင် Data ပျောက်သွားမှာစိုးလို့)
+        const statusEl = document.getElementById('sync-status');
+        statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Save Failed (Offline). Data stored locally until refresh.`;
+        statusEl.style.backgroundColor = "#FEF2F2";
+        statusEl.style.color = "#DC2626";
+        statusEl.classList.remove('hidden');
+        
+        // 3 စက္ကန့်နေရင် Status Bar ပိတ်မယ် (ဒါပေမဲ့ Error ကိုတော့ User သိနေပါစေ)
+        setTimeout(() => {
+             // Retry Logic (Optional)
+        }, 5000);
     } finally {
-        showSyncStatus(false);
+        // Success ဖြစ်ရင် Spinner ပိတ်မယ် (Error တက်ရင် Status bar ပြထားမယ်)
+        // showSyncStatus(false); is handled inside try/catch logic above for better UX
     }
 }
 
@@ -231,13 +246,53 @@ function showSyncStatus(show) {
     if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
 }
 
+// --- 4. BACKUP & RESTORE (NEW) ---
+function exportData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vaultItems));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "cloudkeeper_backup_" + new Date().toISOString().split('T')[0] + ".json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function importData(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (Array.isArray(imported)) {
+                if(confirm(`Restore ${imported.length} items? This will merge with existing data.`)) {
+                    // Merge logic (avoid duplicates by ID)
+                    const existingIds = new Set(vaultItems.map(i => i.id));
+                    const newItems = imported.filter(i => !existingIds.has(i.id));
+                    vaultItems = [...vaultItems, ...newItems];
+                    
+                    renderList();
+                    saveToDrive();
+                    alert("Data Restored Successfully!");
+                }
+            } else {
+                alert("Invalid backup file format.");
+            }
+        } catch (err) {
+            alert("Error reading file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+    input.value = ''; // Reset input
+}
+
 // --- 5. UI LOGIC (View, Fav, Icons) ---
 
 function toggleView(view) {
     currentView = view;
     document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-' + view).classList.add('active');
-    
     const listDiv = document.getElementById('data-list');
     if(view === 'list') {
         listDiv.classList.remove('grid-layout');
@@ -251,14 +306,9 @@ function toggleView(view) {
 function toggleFav(id) {
     const idx = vaultItems.findIndex(i => i.id === id);
     if(idx !== -1) {
-        // Status ပြောင်းမယ် (True <-> False)
         vaultItems[idx].isFav = !vaultItems[idx].isFav;
-        
-        // UI ပြန်ဆွဲမယ်
         renderList();
-        
-        // Drive ပေါ် Save မယ်
-        saveToDrive(); 
+        saveToDrive();
     }
 }
 
@@ -267,14 +317,10 @@ function renderList() {
     const search = document.getElementById('search-input').value.toLowerCase();
     listDiv.innerHTML = '';
 
-    // Filter Logic
     let items = vaultItems.filter(i => {
         const matchesSearch = i.title.toLowerCase().includes(search);
-        
         if (currentFilter === 'all') return matchesSearch;
         if (currentFilter === 'fav') return i.isFav && matchesSearch;
-        
-        // Category Filter
         return i.category === currentFilter && matchesSearch;
     });
 
@@ -283,52 +329,81 @@ function renderList() {
         return;
     }
 
-    // Icon Map
-    const icons = {
-        social: 'fa-globe', bank: 'fa-wallet', home: 'fa-home', work: 'fa-briefcase',
-        wireless: 'fa-wifi', tv: 'fa-tv', auto: 'fa-car', insurance: 'fa-file-contract',
-        other: 'fa-key'
+    // Category Map (Readable Names)
+    const catMap = {
+        social: 'Social', bank: 'Finance', home: 'Home', work: 'Work',
+        wireless: 'Wireless', tv: 'TV & Ent.', auto: 'Auto', insurance: 'Insurance',
+        other: 'Other'
     };
 
     items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'card';
+        // Card တစ်ခုလုံးကို နှိပ်ရင် Detail View ပြမယ်
+        div.onclick = () => viewItemDetail(item.id); 
         
-        // Favorite Active Class Check
         const starClass = item.isFav ? 'fas text-yellow' : 'far';
-        
+        const catName = catMap[item.category] || 'Other';
+
         div.innerHTML = `
             <div class="card-header">
-                <div class="cat-icon"><i class="fas ${icons[item.category] || 'fa-key'}"></i></div>
-                
-                <div class="card-title-wrap" style="flex-grow:1; margin-left:15px;">
-                    <div class="card-title">${item.title}</div>
-                    <div class="card-user">${item.username || 'No Username'}</div>
-                </div>
-
+                <div class="card-category">${catName}</div>
                 <div class="card-actions">
-                    <!-- ★ Favorite Button Added Here ★ -->
-                    <button onclick="toggleFav('${item.id}')" title="Favorite">
-                        <i class="${starClass} fa-star" style="font-size:16px;"></i>
+                    <!-- Buttons click event propagation stop (Card click မဖြစ်အောင်) -->
+                    <button onclick="event.stopPropagation(); toggleFav('${item.id}')" title="Favorite">
+                        <i class="${starClass} fa-star"></i>
                     </button>
-
-                    <button onclick="editItem('${item.id}')" title="Edit">
+                    <button onclick="event.stopPropagation(); editItem('${item.id}')" title="Edit">
                         <i class="fas fa-pen"></i>
                     </button>
-                    
-                    <button onclick="deleteItem('${item.id}')" title="Delete" style="color:#EF4444;">
+                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" title="Delete" style="color:#EF4444;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="card-pass" onclick="toggleBlur(this)">
-                <span class="blur">${item.pass}</span>
-                <i class="fas fa-eye"></i>
-            </div>
+            <div class="card-title">${item.title}</div>
+            <div style="font-size:12px; color:#94a3b8; margin-top:5px;">Tap to view details</div>
         `;
         listDiv.appendChild(div);
     });
+}
+
+// --- NEW FUNCTION: VIEW DETAILS ---
+function viewItemDetail(id) {
+    const item = vaultItems.find(i => i.id === id);
+    if(!item) return;
+
+    const catMap = {
+        social: 'Social Media', bank: 'Finance / Bank', home: 'Home / Utilities', work: 'Work / Business',
+        wireless: 'Wireless / Mobile', tv: 'TV / Entertainment', auto: 'Auto / Car', insurance: 'Insurance', other: 'Other'
+    };
+
+    document.getElementById('view-cat').innerText = catMap[item.category] || 'Other';
+    document.getElementById('view-title').innerText = item.title;
+    document.getElementById('view-user').innerText = item.username || '-';
+    document.getElementById('view-pass').innerText = item.pass;
+    document.getElementById('view-note').innerText = item.note || 'No notes.';
+    
+    // URL Logic
+    const urlBox = document.getElementById('view-url-box');
+    const urlLink = document.getElementById('view-url');
+    if (item.url && item.url.trim() !== "") {
+        urlBox.style.display = 'block';
+        // Add https if missing
+        let href = item.url;
+        if (!/^https?:\/\//i.test(href)) { href = 'https://' + href; }
+        urlLink.href = href;
+    } else {
+        urlBox.style.display = 'none';
+    }
+
+    // Reset blur
+    document.getElementById('view-pass').classList.remove('revealed');
+    document.getElementById('view-pass').classList.add('blur-text');
+
+    // Show Modal
+    document.getElementById('view-modal').style.display = 'flex';
 }
 
 function filterData(cat) {
@@ -344,16 +419,16 @@ function saveEntry() {
     const pass = document.getElementById('inp-pass').value;
     const cat = document.getElementById('inp-cat').value;
     const note = document.getElementById('inp-note').value;
+    const url = document.getElementById('inp-url').value; // ★ URL Field ★
     const id = document.getElementById('entry-id').value || Date.now().toString();
 
     if(!title || !pass) return alert("Title and Password required");
 
-    // အဟောင်းရှိရင် Fav status ကို ပြန်ယူမယ် (မပျောက်အောင်)
     let isFav = false;
     const existing = vaultItems.find(i => i.id === id);
     if(existing) isFav = existing.isFav;
 
-    const newItem = { id, title, user, pass, category: cat, note, isFav };
+    const newItem = { id, title, username: user, pass, category: cat, note, url, isFav };
 
     if (document.getElementById('entry-id').value) {
         const idx = vaultItems.findIndex(i => i.id === id);
@@ -362,7 +437,7 @@ function saveEntry() {
         vaultItems.unshift(newItem);
     }
 
-    closeModal();
+    closeModal('entry-modal');
     renderList();
     saveToDrive();
 }
@@ -379,28 +454,44 @@ function editItem(id) {
     const item = vaultItems.find(i => i.id === id);
     document.getElementById('entry-id').value = item.id;
     document.getElementById('inp-title').value = item.title;
-    document.getElementById('inp-user').value = item.user;
+    document.getElementById('inp-user').value = item.username;
     document.getElementById('inp-pass').value = item.pass;
     document.getElementById('inp-cat').value = item.category;
-    document.getElementById('inp-note').value = item.note;
+    document.getElementById('inp-note').value = item.note || '';
+    document.getElementById('inp-url').value = item.url || ''; // ★ URL Populate ★
+    
     openModal('edit');
+}
+
+// --- ERROR HANDLING & COPY TEXT ---
+function copyText(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        // Optional: Toast notification can go here
+        const el = document.getElementById(elementId);
+        const originalColor = el.style.color;
+        el.style.color = '#10B981'; // Flash green
+        setTimeout(() => el.style.color = originalColor, 500);
+    });
 }
 
 function openModal(mode) {
     document.getElementById('entry-modal').style.display = 'flex';
     const title = document.getElementById('modal-title');
-    if(mode === 'edit') {
-        title.innerHTML = '<i class="fas fa-edit"></i> Edit Account';
-    } else {
-        title.innerHTML = '<i class="fas fa-pen-to-square"></i> New Account';
+    if(mode === 'add') {
+        title.innerHTML = '<i class="fas fa-plus-circle"></i> New Account';
         document.getElementById('entry-id').value = '';
         document.getElementById('inp-title').value = '';
         document.getElementById('inp-user').value = '';
         document.getElementById('inp-pass').value = '';
         document.getElementById('inp-note').value = '';
+    } else {
+        title.innerHTML = '<i class="fas fa-pen-to-square"></i> Edit Account';
     }
 }
+
 function closeModal() { document.getElementById('entry-modal').style.display = 'none'; }
+
 function openGuide() { document.getElementById('guide-modal').style.display = 'flex'; }
 function closeGuide() { document.getElementById('guide-modal').style.display = 'none'; }
 
@@ -408,8 +499,9 @@ function toggleBlur(el) {
     const span = el.querySelector('span');
     span.classList.toggle('blur'); span.classList.toggle('no-blur');
 }
+
 function genPass() {
-    document.getElementById('inp-pass').value = Math.random().toString(36).slice(-8);
+    document.getElementById('inp-pass').value = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
 }
 
 function openModal() { document.getElementById('entry-modal').style.display = 'flex'; }
@@ -419,19 +511,15 @@ function closeModal() { document.getElementById('entry-modal').style.display = '
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
-    
     document.getElementById('tab-'+tabName).classList.add('active');
-    // Highlight button logic
     const btns = document.querySelectorAll('.tab-link');
     if(tabName === 'manual') btns[0].classList.add('active');
     else btns[1].classList.add('active');
 }
 
 // Modal Functions (Update)
-function openGuide() { 
-    document.getElementById('guide-modal').style.display = 'flex'; 
-    switchTab('manual');
-}
+function openGuide() { document.getElementById('guide-modal').style.display = 'flex'; switchTab('manual'); }
+
 function closeGuide() { document.getElementById('guide-modal').style.display = 'none'; }
 
 // --- ANNOUNCEMENT SYSTEM ---

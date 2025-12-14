@@ -18,7 +18,15 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Crypto Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+    <!-- ★ 1. FIREBASE SDK (ဒီကောင်တွေ အရင်လာရမယ်) ★ -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -127,6 +135,29 @@
           <button class="menu-item" onclick="filterData('work')">
             <i class="fas fa-briefcase"></i> <span>Work</span>
           </button>
+          <button class="menu-item" onclick="filterData('other')">
+            <i class="fas fa-box-open"></i> <span>Other</span>
+          </button>
+
+          <div class="menu-label">Data Management</div>
+          <!-- ★ NEW: Backup & Restore ★ -->
+          <button class="menu-item" onclick="exportData()">
+            <i class="fas fa-file-export"></i> <span>Backup Data</span>
+          </button>
+          <button
+            class="menu-item"
+            onclick="document.getElementById('import-file').click()"
+          >
+            <i class="fas fa-file-import"></i> <span>Restore Data</span>
+          </button>
+          <!-- Hidden Input for Import -->
+          <input
+            type="file"
+            id="import-file"
+            style="display: none"
+            onchange="importData(this)"
+            accept=".json"
+          />
 
           <!-- Help Button -->
           <button class="menu-item" onclick="openGuide()">
@@ -171,23 +202,23 @@
 
       <!-- Main Content -->
       <main class="main-area">
-        <header>
-          <!-- ANNOUNCEMENT BANNER -->
-          <div
-            id="announcementBanner"
-            style="display: none"
-            class="announcement-box"
-          >
-            <div class="announce-content">
-              <i class="fas fa-bullhorn"></i>
-              <span id="announceText">Loading news...</span>
-            </div>
-            <i
-              class="fas fa-times close-announce"
-              onclick="closeAnnouncement()"
-            ></i>
+        <!-- ANNOUNCEMENT BANNER -->
+        <div
+          id="announcementBanner"
+          style="display: none"
+          class="announcement-box"
+        >
+          <div class="announce-content">
+            <i class="fas fa-bullhorn"></i>
+            <span id="announceText">Loading news...</span>
           </div>
+          <i
+            class="fas fa-times close-announce"
+            onclick="closeAnnouncement()"
+          ></i>
+        </div>
 
+        <header>
           <div class="search-bar">
             <i class="fas fa-search"></i>
             <input
@@ -233,7 +264,6 @@
     <div id="entry-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <!-- Modal Title ID added -->
           <h3 id="modal-title">
             <i class="fas fa-pen-to-square"></i> New Account
           </h3>
@@ -263,8 +293,21 @@
             </div>
           </div>
 
+          <!-- ★ NEW: URL INPUT ★ -->
           <div class="input-group">
-            <label>Username / ID</label>
+            <label>Website URL (Optional)</label>
+            <div class="icon-input">
+              <i class="fas fa-link"></i>
+              <input
+                type="url"
+                id="inp-url"
+                placeholder="https://example.com"
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Username / Email / ID</label>
             <div class="icon-input">
               <i class="fas fa-user"></i>
               <input type="text" id="inp-user" />
@@ -286,12 +329,74 @@
 
           <div class="input-group">
             <label>Notes / Security Q</label>
-            <textarea id="inp-note" rows="3"></textarea>
+            <textarea id="inp-note" rows="2"></textarea>
           </div>
 
           <div class="modal-footer">
             <button onclick="saveEntry()" class="btn-save">
               Save Securely
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ★ NEW: VIEW DETAILS MODAL (အသေးစိတ်ကြည့်ရန်) ★ -->
+    <div id="view-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Account Details</h3>
+          <span onclick="closeModal('view-modal')" class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div class="view-row">
+            <label>Category:</label>
+            <span id="view-cat" class="badge"></span>
+          </div>
+          <div class="view-row">
+            <label>Title:</label>
+            <span id="view-title" class="val-text"></span>
+          </div>
+
+          <div class="view-box" id="view-url-box" style="display: none">
+            <label>Website:</label>
+            <a id="view-url" href="#" target="_blank"
+              >Open Link <i class="fas fa-external-link-alt"></i
+            ></a>
+          </div>
+
+          <div class="view-box">
+            <label>Username:</label>
+            <div class="copy-row">
+              <span id="view-user"></span>
+              <i class="far fa-copy" onclick="copyText('view-user')"></i>
+            </div>
+          </div>
+
+          <div class="view-box">
+            <label>Password:</label>
+            <div class="copy-row">
+              <span
+                id="view-pass"
+                class="blur-text"
+                onclick="this.classList.toggle('revealed')"
+              ></span>
+              <i class="far fa-copy" onclick="copyText('view-pass')"></i>
+            </div>
+          </div>
+
+          <div class="view-box">
+            <label>Notes:</label>
+            <p id="view-note" class="note-text"></p>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              onclick="closeModal('view-modal')"
+              class="btn-primary"
+              style="width: 100%"
+            >
+              Close
             </button>
           </div>
         </div>
@@ -514,6 +619,7 @@
       src="https://accounts.google.com/gsi/client"
       onload="gisLoaded()"
     ></script>
+
     <script src="script.js"></script>
   </body>
 </html>
