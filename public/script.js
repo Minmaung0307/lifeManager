@@ -1,298 +1,329 @@
 // --- 1. CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyBKve-zt2uXcOebXvpSPOZt4ZRRL7Esqgk",
-  authDomain: "lifemanager-mm.firebaseapp.com",
-  projectId: "lifemanager-mm",
-  storageBucket: "lifemanager-mm.firebasestorage.app",
-  messagingSenderId: "582617327472",
-  appId: "1:582617327472:web:194b114249e69a273bd1b5",
-  measurementId: "G-V1QK1VMVDT"
-};
+// Google Cloud Console မှ ရယူပါ
+const CLIENT_ID = '299263158228-o9m3ca5nmqrhg6sav527437ukiijrfu8.apps.googleusercontent.com'; // <--- ဒီမှာထည့်ပါ
+const API_KEY = 'AIzaSyAfrHWN0UzusdTi964OrS71M6RQd5wF6UM';    
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const provider = new firebase.auth.GoogleAuthProvider();
-provider.addScope('https://www.googleapis.com/auth/drive.file');
-provider.setCustomParameters({ prompt: 'select_account consent' });
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// Global Vars
-let gDriveToken = localStorage.getItem("vaultToken");
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
+
+const DATA_FILE_NAME = "cloud_keeper_data_v3.json";
 let driveFileId = null;
-const DATA_FILE_NAME = 'my_secure_vault.json';
-let vaultData = []; // Encrypted data from drive
-let decryptedVault = []; // Decrypted usable data
-let MASTER_KEY = null; // Memory only (Reset on refresh)
+let vaultItems = [];
 let currentFilter = 'all';
+let currentView = 'grid';
 
-// --- 2. AUTHENTICATION ---
-auth.onAuthStateChanged((user) => {
-    if (user && gDriveToken) {
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('user-display').innerText = user.displayName;
-        // User ဝင်ပြီးတာနဲ့ Master Password တောင်းမယ်
-        document.getElementById('master-screen').style.display = 'flex';
-    } else {
-        document.getElementById('auth-screen').style.display = 'flex';
-    }
-});
-
-function googleLogin() {
-    auth.signInWithPopup(provider).then((result) => {
-        gDriveToken = result.credential.accessToken;
-        localStorage.setItem("vaultToken", gDriveToken);
-        location.reload();
-    }).catch(err => alert(err.message));
+// --- 2. INITIALIZATION & PERSISTENCE ---
+function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
 }
 
-function logout() {
-    auth.signOut().then(() => {
-        localStorage.removeItem("vaultToken");
-        location.reload();
+async function initializeGapiClient() {
+    await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
+    gapiInited = true;
+    checkAuth();
+}
+
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID, scope: SCOPES, callback: '',
     });
+    gisInited = true;
+    checkAuth();
 }
 
-// --- 3. MASTER PASSWORD & ENCRYPTION ---
-async function unlockVault() {
-    const input = document.getElementById('master-pass');
-    const pass = input.value;
-    if(!pass) return alert("Please enter Master Password");
+function checkAuth() {
+    // 1. Check if both libraries loaded
+    if (!gapiInited || !gisInited) return;
 
-    // Show Loading
-    const btn = document.querySelector('#master-screen button');
-    btn.innerText = "Decrypting...";
-    btn.disabled = true;
+    // 2. Check LocalStorage for existing token
+    const storedToken = localStorage.getItem('g_token');
+    const storedExpiry = localStorage.getItem('g_token_exp');
+    
+    if (storedToken && storedExpiry && Date.now() < parseInt(storedExpiry)) {
+        // Restore Token
+        gapi.client.setToken({ access_token: storedToken });
+        showApp();
+    } else {
+        // Show Login
+        document.getElementById('login-view').style.display = 'flex';
+    }
+}
 
-    try {
-        // 1. Fetch Encrypted File from Drive
-        await initDriveSync();
-        
-        // 2. Try Decrypt
-        if(vaultData.length > 0) {
-            // Check if password works by trying to decrypt first item
-            // Note: In real app, we might store a hash to verify password
-            const testDec = CryptoJS.AES.decrypt(vaultData[0].data, pass).toString(CryptoJS.enc.Utf8);
-            
-            if(!testDec) throw new Error("Wrong Password");
-            
-            // Success: Decrypt All
-            decryptedVault = vaultData.map(item => {
-                const jsonStr = CryptoJS.AES.decrypt(item.data, pass).toString(CryptoJS.enc.Utf8);
-                return JSON.parse(jsonStr);
-            });
-        } else {
-            // New Vault
-            decryptedVault = [];
+// --- 3. AUTHENTICATION ---
+function handleAuthClick() {
+    tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+            throw (resp);
         }
-
-        // 3. Save Key to Memory (RAM only)
-        MASTER_KEY = pass;
         
-        // 4. Enter App
-        document.getElementById('master-screen').style.display = 'none';
-        document.getElementById('app-screen').style.display = 'flex';
-        renderItems();
+        // Save Token (Valid for 1 hour)
+        const expiresIn = 3500 * 1000; // ~58 mins
+        localStorage.setItem('g_token', resp.access_token);
+        localStorage.setItem('g_token_exp', Date.now() + expiresIn);
 
-    } catch (e) {
-        console.error(e);
-        alert("Incorrect Master Password or Corrupt Data.");
-        btn.innerText = "Unlock";
-        btn.disabled = false;
-    }
-}
-
-// --- 4. DRIVE SYNC ---
-async function initDriveSync() {
-    document.getElementById('loader').style.display = 'block';
-    
-    // Find File
-    const q = `name = '${DATA_FILE_NAME}' and trashed = false`;
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
-        headers: { 'Authorization': `Bearer ${gDriveToken}` }
-    });
-    const result = await res.json();
-
-    if (result.files && result.files.length > 0) {
-        driveFileId = result.files[0].id;
-        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
-            headers: { 'Authorization': `Bearer ${gDriveToken}` }
-        });
-        vaultData = await fileRes.json();
-    } else {
-        // Create New File
-        const metadata = { name: DATA_FILE_NAME, mimeType: 'application/json' };
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', new Blob([JSON.stringify([])], { type: 'application/json' })); // Empty array
-
-        const createRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${gDriveToken}` },
-            body: form
-        });
-        const newFile = await createRes.json();
-        driveFileId = newFile.id;
-        vaultData = [];
-    }
-    document.getElementById('loader').style.display = 'none';
-}
-
-async function syncToDrive() {
-    document.getElementById('loader').style.display = 'block';
-    
-    // Encrypt Data before saving
-    const encryptedData = decryptedVault.map(item => {
-        return {
-            id: item.id,
-            data: CryptoJS.AES.encrypt(JSON.stringify(item), MASTER_KEY).toString()
-        };
-    });
-
-    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-        method: 'PATCH',
-        headers: { 
-            'Authorization': `Bearer ${gDriveToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(encryptedData)
-    });
-    document.getElementById('loader').style.display = 'none';
-}
-
-// --- 5. APP LOGIC ---
-function renderItems() {
-    const grid = document.getElementById('vault-grid');
-    const search = document.getElementById('search-input').value.toLowerCase();
-    grid.innerHTML = '';
-
-    let items = decryptedVault;
-
-    // Filter Category
-    if(currentFilter === 'fav') items = items.filter(i => i.isFav);
-    else if(currentFilter !== 'all') items = items.filter(i => i.category === currentFilter);
-
-    // Filter Search
-    items = items.filter(i => i.title.toLowerCase().includes(search) || i.username.toLowerCase().includes(search));
-
-    items.forEach(item => {
-        const iconMap = {
-            home: 'fa-home', bank: 'fa-university', car: 'fa-car',
-            work: 'fa-briefcase', health: 'fa-heartbeat', social: 'fa-globe', other: 'fa-lock'
-        };
-
-        const div = document.createElement('div');
-        div.className = 'vault-card';
-        div.innerHTML = `
-            <div class="card-header">
-                <div class="card-icon"><i class="fas ${iconMap[item.category] || 'fa-lock'}"></i></div>
-                <div class="card-actions">
-                    <button class="btn-icon btn-fav ${item.isFav?'active':''}" onclick="toggleFav('${item.id}')"><i class="fas fa-star"></i></button>
-                    <button class="btn-icon" onclick="editItem('${item.id}')"><i class="fas fa-pen"></i></button>
-                    <button class="btn-icon" onclick="deleteItem('${item.id}')" style="color:red;"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <div class="card-title">${item.title}</div>
-            <div class="card-user"><i class="fas fa-user"></i> ${item.username}</div>
-            
-            <div class="secret-field">
-                <span>PASS:</span>
-                <span class="secret-val blurred" onclick="toggleBlur(this)">${item.password}</span>
-                <i class="far fa-copy" onclick="copyText('${item.password}')" style="cursor:pointer"></i>
-            </div>
-            
-            ${item.securityQ ? `
-            <div class="secret-field" style="margin-top:5px; font-size:12px;">
-                <span>SEC:</span>
-                <span class="secret-val blurred" onclick="toggleBlur(this)">${item.securityQ}</span>
-            </div>` : ''}
-        `;
-        grid.appendChild(div);
-    });
-}
-
-// Actions
-function saveItem() {
-    const id = document.getElementById('edit-id').value;
-    const title = document.getElementById('inp-title').value;
-    const user = document.getElementById('inp-user').value;
-    const pass = document.getElementById('inp-pass').value;
-    
-    if(!title || !user || !pass) return alert("Please fill Title, Username and Password");
-
-    const newItem = {
-        id: id || Date.now().toString(),
-        category: document.getElementById('inp-cat').value,
-        title, username: user, password: pass,
-        securityQ: document.getElementById('inp-sec').value,
-        url: document.getElementById('inp-url').value,
-        isFav: false
+        showApp();
     };
-
-    if(id) {
-        const idx = decryptedVault.findIndex(i => i.id === id);
-        newItem.isFav = decryptedVault[idx].isFav; // preserve fav
-        decryptedVault[idx] = newItem;
-    } else {
-        decryptedVault.unshift(newItem);
-    }
-
-    closeModal();
-    renderItems();
-    syncToDrive();
+    tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 
-function deleteItem(id) {
-    if(confirm("Delete this account?")) {
-        decryptedVault = decryptedVault.filter(i => i.id !== id);
-        renderItems();
-        syncToDrive();
+async function showApp() {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'flex';
+    await initDriveData();
+}
+
+function handleSignoutClick() {
+    const token = gapi.client.getToken();
+    if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken('');
+        localStorage.removeItem('g_token');
+        localStorage.removeItem('g_token_exp');
+        location.reload();
+    }
+}
+
+// --- 4. DRIVE SYNC ENGINE (FIXED SPINNER) ---
+async function initDriveData() {
+    showSyncStatus(true);
+    try {
+        // User Profile
+        try {
+            const about = await gapi.client.drive.about.get({ fields: 'user' });
+            const user = about.result.user;
+            if(user) {
+                document.getElementById('user-avatar').src = user.photoLink;
+                document.getElementById('user-name').innerText = user.displayName;
+            }
+        } catch(e) {}
+
+        // File Search
+        const response = await gapi.client.drive.files.list({
+            'q': `name = '${DATA_FILE_NAME}' and trashed = false`,
+            'fields': 'files(id, name)',
+        });
+        
+        const files = response.result.files;
+        if (files && files.length > 0) {
+            driveFileId = files[0].id;
+            await loadFileContent();
+        } else {
+            await createDriveFile();
+        }
+    } catch (err) {
+        console.error("Drive Error", err);
+        if(err.status === 401) handleSignoutClick(); // Logout if token expired
+        else alert("Sync Error: " + err.message);
+    } finally {
+        showSyncStatus(false); // ★ MUST RUN ★
+    }
+}
+
+async function createDriveFile() {
+    const fileContent = { items: [] };
+    const file = new Blob([JSON.stringify(fileContent)], {type: 'application/json'});
+    const metadata = { 'name': DATA_FILE_NAME, 'mimeType': 'application/json' };
+    const accessToken = gapi.client.getToken().access_token;
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', file);
+
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+        body: form,
+    });
+    const val = await res.json();
+    driveFileId = val.id;
+    vaultItems = [];
+    renderList();
+}
+
+async function loadFileContent() {
+    const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
+    vaultItems = res.result.items || [];
+    renderList();
+}
+
+async function saveToDrive() {
+    showSyncStatus(true);
+    try {
+        const content = { items: vaultItems };
+        const accessToken = gapi.client.getToken().access_token;
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+            method: 'PATCH',
+            headers: new Headers({ 
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify(content),
+        });
+        console.log("Saved.");
+    } catch(e) {
+        alert("Save Failed: " + e.message);
+    } finally {
+        showSyncStatus(false);
+    }
+}
+
+function showSyncStatus(show) {
+    const el = document.getElementById('sync-status');
+    if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
+}
+
+// --- 5. UI LOGIC (View, Fav, Icons) ---
+
+function toggleView(view) {
+    currentView = view;
+    document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + view).classList.add('active');
+    
+    const listDiv = document.getElementById('data-list');
+    if(view === 'list') {
+        listDiv.classList.remove('grid-layout');
+        listDiv.classList.add('list-layout');
+    } else {
+        listDiv.classList.remove('list-layout');
+        listDiv.classList.add('grid-layout');
     }
 }
 
 function toggleFav(id) {
-    const item = decryptedVault.find(i => i.id === id);
-    item.isFav = !item.isFav;
-    renderItems();
-    syncToDrive();
+    const idx = vaultItems.findIndex(i => i.id === id);
+    if(idx !== -1) {
+        vaultItems[idx].isFav = !vaultItems[idx].isFav;
+        renderList();
+        saveToDrive();
+    }
 }
 
-function filterCategory(cat) {
+function renderList() {
+    const listDiv = document.getElementById('data-list');
+    const search = document.getElementById('search-input').value.toLowerCase();
+    listDiv.innerHTML = '';
+
+    let items = vaultItems.filter(i => {
+        const matchesSearch = i.title.toLowerCase().includes(search);
+        if (currentFilter === 'all') return matchesSearch;
+        if (currentFilter === 'fav') return i.isFav && matchesSearch;
+        return i.category === currentFilter && matchesSearch;
+    });
+
+    const icons = {
+        social: 'fa-globe', bank: 'fa-wallet', home: 'fa-home', work: 'fa-briefcase',
+        wireless: 'fa-wifi', tv: 'fa-tv', auto: 'fa-car', insurance: 'fa-file-contract',
+        other: 'fa-key'
+    };
+
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="card-header">
+                <div class="cat-icon"><i class="fas ${icons[item.category] || 'fa-key'}"></i></div>
+                <div class="card-title-wrap">
+                    <div class="card-title">${item.title}</div>
+                    <div class="card-user">${item.user || 'No User'}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-star ${item.isFav ? 'active' : ''}" onclick="toggleFav('${item.id}')">
+                        <i class="${item.isFav ? 'fas' : 'far'} fa-star"></i>
+                    </button>
+                    <button onclick="editItem('${item.id}')"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteItem('${item.id}')" style="color:#EF4444;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            
+            <div class="card-pass" onclick="toggleBlur(this)">
+                <span class="blur">${item.pass}</span>
+                <i class="fas fa-eye"></i>
+            </div>
+        `;
+        listDiv.appendChild(div);
+    });
+}
+
+function filterData(cat) {
     currentFilter = cat;
     document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
     event.currentTarget.classList.add('active');
-    renderItems();
+    renderList();
 }
 
-// Helpers
-function openModal() { document.getElementById('item-modal').style.display = 'flex'; clearForm(); }
-function closeModal() { document.getElementById('item-modal').style.display = 'none'; }
-function clearForm() {
-    document.getElementById('edit-id').value = '';
-    document.getElementById('inp-title').value = '';
-    document.getElementById('inp-user').value = '';
-    document.getElementById('inp-pass').value = '';
-    document.getElementById('inp-sec').value = '';
-    document.getElementById('inp-url').value = '';
+function saveEntry() {
+    const title = document.getElementById('inp-title').value;
+    const user = document.getElementById('inp-user').value;
+    const pass = document.getElementById('inp-pass').value;
+    const cat = document.getElementById('inp-cat').value;
+    const note = document.getElementById('inp-note').value;
+    const id = document.getElementById('entry-id').value || Date.now().toString();
+
+    if(!title || !pass) return alert("Title and Password required");
+
+    let isFav = false;
+    const existing = vaultItems.find(i => i.id === id);
+    if(existing) isFav = existing.isFav;
+
+    const newItem = { id, title, user, pass, category: cat, note, isFav };
+
+    if (document.getElementById('entry-id').value) {
+        const idx = vaultItems.findIndex(i => i.id === id);
+        vaultItems[idx] = newItem;
+    } else {
+        vaultItems.unshift(newItem);
+    }
+
+    closeModal();
+    renderList();
+    saveToDrive();
 }
+
+function deleteItem(id) {
+    if(confirm("Delete?")) {
+        vaultItems = vaultItems.filter(i => i.id !== id);
+        renderList();
+        saveToDrive();
+    }
+}
+
 function editItem(id) {
-    const item = decryptedVault.find(i => i.id === id);
-    document.getElementById('edit-id').value = item.id;
-    document.getElementById('inp-cat').value = item.category;
+    const item = vaultItems.find(i => i.id === id);
+    document.getElementById('entry-id').value = item.id;
     document.getElementById('inp-title').value = item.title;
-    document.getElementById('inp-user').value = item.username;
-    document.getElementById('inp-pass').value = item.password;
-    document.getElementById('inp-sec').value = item.securityQ;
-    document.getElementById('inp-url').value = item.url;
-    document.getElementById('item-modal').style.display = 'flex';
+    document.getElementById('inp-user').value = item.user;
+    document.getElementById('inp-pass').value = item.pass;
+    document.getElementById('inp-cat').value = item.category;
+    document.getElementById('inp-note').value = item.note;
+    openModal('edit');
 }
-function toggleBlur(el) { el.classList.toggle('blurred'); }
-function copyText(txt) { navigator.clipboard.writeText(txt); alert("Copied!"); }
-function togglePass(id) {
-    const x = document.getElementById(id);
-    x.type = x.type === "password" ? "text" : "password";
+
+function openModal(mode) {
+    document.getElementById('entry-modal').style.display = 'flex';
+    const title = document.getElementById('modal-title');
+    if(mode === 'edit') {
+        title.innerHTML = '<i class="fas fa-edit"></i> Edit Account';
+    } else {
+        title.innerHTML = '<i class="fas fa-pen-to-square"></i> New Account';
+        document.getElementById('entry-id').value = '';
+        document.getElementById('inp-title').value = '';
+        document.getElementById('inp-user').value = '';
+        document.getElementById('inp-pass').value = '';
+        document.getElementById('inp-note').value = '';
+    }
 }
-function generateStrongPass() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-    let pass = "";
-    for (let i = 0; i < 16; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
-    document.getElementById('inp-pass').value = pass;
+function closeModal() { document.getElementById('entry-modal').style.display = 'none'; }
+function openGuide() { document.getElementById('guide-modal').style.display = 'flex'; }
+function closeGuide() { document.getElementById('guide-modal').style.display = 'none'; }
+
+function toggleBlur(el) { 
+    const span = el.querySelector('span');
+    span.classList.toggle('blur'); 
+    span.classList.toggle('no-blur');
+}
+function genPass() {
+    document.getElementById('inp-pass').value = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
 }

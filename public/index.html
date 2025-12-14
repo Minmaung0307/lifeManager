@@ -1,224 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SecureVault - Life Manager</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudKeeper</title>
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <meta name="theme-color" content="#2563EB">
 
-    <link rel="icon" type="image/svg+xml" href="icon.svg" />
-    <link rel="apple-touch-icon" href="icon-192.png" />
-    <!-- iOS အတွက် -->
-    <link rel="manifest" href="manifest.json" />
-    <!-- Libraries -->
-    <!-- Icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <!-- Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Crypto JS (Encryption အတွက်) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- 1. GOOGLE LOGIN SCREEN -->
-    <div id="auth-screen" class="screen active">
-      <div class="center-card">
-        <div class="logo"><i class="fas fa-shield-alt"></i> SecureVault</div>
-        <p>Your Digital Life, Secured on Your Drive.</p>
-        <button onclick="googleLogin()" class="btn-google">
-          <i class="fab fa-google"></i> Sign in with Google
-        </button>
-        <p class="small-note">
-          We store encrypted data only on your personal Google Drive.
-        </p>
-      </div>
+    <!-- 1. LOGIN SCREEN -->
+    <div id="login-view" class="view active">
+        <div class="login-card">
+            <div class="logo-circle"><i class="fas fa-cloud-lock"></i></div>
+            <h1>CloudKeeper</h1>
+            <p>Your Secure Vault on Google Drive</p>
+            <button onclick="handleAuthClick()" class="btn-google">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G">
+                Sign in with Google
+            </button>
+            <p class="note">Encrypted & Stored on your Drive.</p>
+        </div>
     </div>
 
-    <!-- 2. MASTER PASSWORD SETUP / LOGIN (Encryption Key) -->
-    <div id="master-screen" class="screen" style="display: none">
-      <div class="center-card">
-        <div class="icon-lock"><i class="fas fa-lock"></i></div>
-        <h2 id="master-title">Unlock Vault</h2>
-        <p id="master-desc">Enter your Master Password to decrypt your data.</p>
+    <!-- 2. DASHBOARD -->
+    <div id="app-view" class="view" style="display: none;">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fas fa-shield-alt"></i> <span>Keeper</span>
+            </div>
+            
+            <!-- Menu Container (User Panel is now INSIDE for mobile scroll) -->
+            <div class="menu-container">
+                <button class="menu-item active" onclick="filterData('all')"><i class="fas fa-border-all"></i> <span>All Items</span></button>
+                <button class="menu-item" onclick="filterData('fav')"><i class="fas fa-star text-yellow"></i> <span>Favorites</span></button>
+                
+                <div class="menu-label">Categories</div>
+                <button class="menu-item" onclick="filterData('social')"><i class="fas fa-globe"></i> <span>Social</span></button>
+                <button class="menu-item" onclick="filterData('bank')"><i class="fas fa-wallet"></i> <span>Finance</span></button>
+                <button class="menu-item" onclick="filterData('wireless')"><i class="fas fa-wifi"></i> <span>Wireless</span></button>
+                <button class="menu-item" onclick="filterData('tv')"><i class="fas fa-tv"></i> <span>TV & Ent.</span></button>
+                <button class="menu-item" onclick="filterData('auto')"><i class="fas fa-car"></i> <span>Auto</span></button>
+                <button class="menu-item" onclick="filterData('insurance')"><i class="fas fa-file-contract"></i> <span>Insurance</span></button>
+                <button class="menu-item" onclick="filterData('home')"><i class="fas fa-home"></i> <span>Home</span></button>
+                <button class="menu-item" onclick="filterData('work')"><i class="fas fa-briefcase"></i> <span>Work</span></button>
 
-        <div class="input-group">
-          <input
-            type="password"
-            id="master-pass"
-            placeholder="Master Password"
-          />
-          <i
-            class="fas fa-eye toggle-pass"
-            onclick="togglePass('master-pass')"
-          ></i>
-        </div>
+                <!-- Help Button -->
+                <button class="menu-item" onclick="openGuide()"><i class="fas fa-question-circle"></i> <span>Guide & Privacy</span></button>
 
-        <button onclick="unlockVault()" class="btn-primary">Unlock</button>
-        <p class="warning-text">
-          <i class="fas fa-exclamation-triangle"></i> If you forget this
-          password, your data cannot be recovered.
-        </p>
-      </div>
-    </div>
+                <!-- User Panel (Moved Inside) -->
+                <div class="user-panel">
+                    <img id="user-avatar" src="" alt="User" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <div class="user-details">
+                        <span id="user-name">User</span>
+                        <button onclick="handleSignoutClick()" class="btn-sm">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-    <!-- 3. MAIN DASHBOARD -->
-    <div id="app-screen" class="app-layout" style="display: none">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="brand"><i class="fas fa-shield-alt"></i> Vault</div>
+        <!-- Main Content -->
+        <main class="main-area">
+            <header>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search vault..." onkeyup="renderList()">
+                </div>
+                
+                <div class="header-actions">
+                    <div class="view-toggles">
+                        <button class="btn-toggle active" id="btn-grid" onclick="toggleView('grid')"><i class="fas fa-th-large"></i></button>
+                        <button class="btn-toggle" id="btn-list" onclick="toggleView('list')"><i class="fas fa-list"></i></button>
+                    </div>
+                    <button onclick="openModal('add')" class="btn-primary"><i class="fas fa-plus"></i> <span class="desk-only">Add New</span></button>
+                </div>
+            </header>
 
-        <div class="menu">
-          <button class="menu-item active" onclick="filterCategory('all')">
-            <i class="fas fa-th-large"></i> All Items
-          </button>
-          <button class="menu-item" onclick="filterCategory('fav')">
-            <i class="fas fa-star text-yellow"></i> Favorites
-          </button>
+            <div id="sync-status" class="status-bar hidden">
+                <i class="fas fa-sync fa-spin"></i> Syncing with Google Drive...
+            </div>
 
-          <div class="menu-label">Categories</div>
-          <button class="menu-item" onclick="filterCategory('home')">
-            <i class="fas fa-home"></i> Home & HOA
-          </button>
-          <button class="menu-item" onclick="filterCategory('bank')">
-            <i class="fas fa-university"></i> Finance
-          </button>
-          <button class="menu-item" onclick="filterCategory('car')">
-            <i class="fas fa-car"></i> Auto
-          </button>
-          <button class="menu-item" onclick="filterCategory('work')">
-            <i class="fas fa-briefcase"></i> Work
-          </button>
-          <button class="menu-item" onclick="filterCategory('health')">
-            <i class="fas fa-heartbeat"></i> Health
-          </button>
-          <button class="menu-item" onclick="filterCategory('social')">
-            <i class="fas fa-globe"></i> Social/Email
-          </button>
-        </div>
-
-        <div class="user-footer">
-          <div id="user-display">User</div>
-          <button onclick="logout()" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-      </aside>
-
-      <!-- Main Content -->
-      <main class="content">
-        <header class="top-bar">
-          <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input
-              type="text"
-              id="search-input"
-              placeholder="Search accounts, banks..."
-              onkeyup="renderItems()"
-            />
-          </div>
-          <button onclick="openModal()" class="btn-add">
-            <i class="fas fa-plus"></i> Add New
-          </button>
-        </header>
-
-        <div id="loader" style="display: none">
-          <i class="fas fa-circle-notch fa-spin"></i> Syncing with Drive...
-        </div>
-
-        <div id="vault-grid" class="grid-container">
-          <!-- Items will be injected here -->
-        </div>
-      </main>
+            <div id="data-list" class="grid-layout"></div>
+        </main>
     </div>
 
     <!-- ADD/EDIT MODAL -->
-    <div id="item-modal" class="modal-overlay">
-      <div class="modal-box">
-        <div class="modal-header">
-          <h3 id="modal-title">Add Account</h3>
-          <button onclick="closeModal()" class="btn-close">&times;</button>
+    <div id="entry-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- Modal Title ID added -->
+                <h3 id="modal-title"><i class="fas fa-pen-to-square"></i> New Account</h3>
+                <span onclick="closeModal()" class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="entry-id">
+                
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Category</label>
+                        <select id="inp-cat">
+                            <option value="social">Social Media</option>
+                            <option value="bank">Finance / Bank</option>
+                            <option value="wireless">Wireless / Mobile</option>
+                            <option value="tv">TV / Entertainment</option>
+                            <option value="auto">Auto / Car</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="home">Home / Utilities</option>
+                            <option value="work">Work / Business</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Title</label>
+                        <input type="text" id="inp-title" placeholder="e.g. Netflix">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Username / ID</label>
+                    <div class="icon-input">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="inp-user">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <div class="pass-box">
+                        <div class="icon-input">
+                            <i class="fas fa-key"></i>
+                            <input type="text" id="inp-pass">
+                        </div>
+                        <button onclick="genPass()" class="btn-gen"><i class="fas fa-magic"></i></button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Notes / Security Q</label>
+                    <textarea id="inp-note" rows="3"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button onclick="saveEntry()" class="btn-save">Save Securely</button>
+                </div>
+            </div>
         </div>
-        <div class="modal-body">
-          <input type="hidden" id="edit-id" />
-
-          <div class="form-row">
-            <div class="field">
-              <label>Category</label>
-              <select id="inp-cat">
-                <option value="home">Home (Insurance/HOA)</option>
-                <option value="bank">Finance (Bank/Escrow)</option>
-                <option value="car">Auto (Car/Insurance)</option>
-                <option value="work">Work/Business</option>
-                <option value="health">Health/Medical</option>
-                <option value="social">Social/Email</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Title (e.g. Flood Insurance)</label>
-              <input type="text" id="inp-title" placeholder="Account Name" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label>Username / Login ID</label>
-            <input type="text" id="inp-user" />
-          </div>
-
-          <div class="field">
-            <label>Password</label>
-            <div class="input-group">
-              <input type="text" id="inp-pass" placeholder="Secret Password" />
-              <button class="btn-gen" onclick="generateStrongPass()">
-                Generate
-              </button>
-            </div>
-          </div>
-
-          <div class="field">
-            <label>Security Questions / PIN</label>
-            <textarea
-              id="inp-sec"
-              rows="2"
-              placeholder="Q: Pet name? A: Lucky"
-            ></textarea>
-          </div>
-
-          <div class="field">
-            <label>Website / Note</label>
-            <input type="text" id="inp-url" placeholder="https://..." />
-          </div>
-
-          <div class="modal-footer">
-            <button onclick="saveItem()" class="btn-primary full">
-              Save Securely
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- PWA Installer Script -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("./sw.js")
-          .then((reg) => console.log("Service Worker Registered"))
-          .catch((err) => console.log("Service Worker Error", err));
-      }
-    </script>
+    <!-- GUIDE MODAL (New) -->
+    <div id="guide-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Guide & Privacy</h3>
+                <span onclick="closeGuide()" class="close">&times;</span>
+            </div>
+            <div class="modal-body scroll-body">
+                <h4>🚀 How to use (အသုံးပြုနည်း)</h4>
+                <ul class="guide-list">
+                    <li><b>Login:</b> Sign in with your Google Account to access your secure drive space.</li>
+                    <li><b>Add Item:</b> Click "+ Add New" to store accounts (Bank, Wifi, Social, etc.).</li>
+                    <li><b>Encryption:</b> All data is encrypted on your device *before* sending to Google Drive. Only you can read it.</li>
+                    <li><b>Sync:</b> Data is saved to `cloud_keeper_data_v2.json` in your Drive. It syncs across devices.</li>
+                </ul>
+                
+                <hr>
+                
+                <h4>🔒 Privacy Policy</h4>
+                <p class="privacy-text">
+                    This app is a standalone tool developed by an independent developer. <br>
+                    1. <b>No Tracking:</b> We do not track you or store your data on our servers. <br>
+                    2. <b>Ownership:</b> Your data lives in YOUR Google Drive. You have full control. <br>
+                    3. <b>Security:</b> We use AES Encryption. Even Google cannot read your passwords.
+                </p>
+            </div>
+        </div>
+    </div>
 
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <script src="script.js"></script>
-  </body>
+</body>
 </html>

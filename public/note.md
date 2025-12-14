@@ -1,0 +1,6 @@
+API Key
+
+AIzaSyAfrHWN0UzusdTi964OrS71M6RQd5wF6UM
+
+Client ID
+299263158228-o9m3ca5nmqrhg6sav527437ukiijrfu8.apps.googleusercontent.com
