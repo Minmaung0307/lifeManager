@@ -343,61 +343,62 @@
 
     <!-- ★ NEW: VIEW DETAILS MODAL (အသေးစိတ်ကြည့်ရန်) ★ -->
     <div id="view-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Account Details</h3>
-          <span onclick="closeModal('view-modal')" class="close">&times;</span>
+      <div class="modal-content view-card">
+        <!-- Header -->
+        <div class="view-header-section" id="view-header-bg">
+          <button onclick="closeModal('view-modal')" class="view-close-btn">
+            &times;
+          </button>
+          <div class="view-icon-wrapper" id="view-icon-box">
+            <i id="view-icon" class="fas fa-shield-alt"></i>
+          </div>
+          <h3 id="view-title">Title</h3>
+          <span id="view-cat" class="view-badge">Category</span>
         </div>
+
         <div class="modal-body">
-          <div class="view-row">
-            <label>Category:</label>
-            <span id="view-cat" class="badge"></span>
-          </div>
-          <div class="view-row">
-            <label>Title:</label>
-            <span id="view-title" class="val-text"></span>
-          </div>
-
-          <div class="view-box" id="view-url-box" style="display: none">
-            <label>Website:</label>
-            <a id="view-url" href="#" target="_blank"
-              >Open Link <i class="fas fa-external-link-alt"></i
-            ></a>
+          <!-- ★ WEBSITE URL BUTTON (Updated) ★ -->
+          <div
+            id="view-url-container"
+            style="display: none; margin-bottom: 20px; text-align: center"
+          >
+            <a id="view-url" href="#" target="_blank" class="btn-visit">
+              <i class="fas fa-external-link-alt"></i> Open Website
+            </a>
           </div>
 
-          <div class="view-box">
-            <label>Username:</label>
-            <div class="copy-row">
-              <span id="view-user"></span>
-              <i class="far fa-copy" onclick="copyText('view-user')"></i>
+          <!-- Details Grid -->
+          <div class="details-grid">
+            <div class="detail-box">
+              <label>Username</label>
+              <div class="copy-wrapper">
+                <span id="view-user">user</span>
+                <button onclick="copyText('view-user')" class="btn-copy">
+                  <i class="far fa-copy"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="detail-box">
+              <label>Password</label>
+              <div class="copy-wrapper">
+                <span
+                  id="view-pass"
+                  class="blur-text"
+                  onclick="this.classList.toggle('revealed')"
+                  >******</span
+                >
+                <button onclick="copyText('view-pass')" class="btn-copy">
+                  <i class="far fa-copy"></i>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="view-box">
-            <label>Password:</label>
-            <div class="copy-row">
-              <span
-                id="view-pass"
-                class="blur-text"
-                onclick="this.classList.toggle('revealed')"
-              ></span>
-              <i class="far fa-copy" onclick="copyText('view-pass')"></i>
-            </div>
-          </div>
-
-          <div class="view-box">
-            <label>Notes:</label>
-            <p id="view-note" class="note-text"></p>
-          </div>
-
-          <div class="modal-footer">
-            <button
-              onclick="closeModal('view-modal')"
-              class="btn-primary"
-              style="width: 100%"
-            >
-              Close
-            </button>
+          <!-- Notes -->
+          <div class="detail-box full-width" style="margin-top: 15px">
+            <label>Notes</label>
+            <div class="note-content" id="view-note">No notes.</div>
           </div>
         </div>
       </div>

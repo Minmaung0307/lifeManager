@@ -329,41 +329,55 @@ function renderList() {
         return;
     }
 
-    // Category Map (Readable Names)
-    const catMap = {
-        social: 'Social', bank: 'Finance', home: 'Home', work: 'Work',
-        wireless: 'Wireless', tv: 'TV & Ent.', auto: 'Auto', insurance: 'Insurance',
-        other: 'Other'
+    // ★ STYLE MAP with LABELS ★
+    const styleMap = {
+        social:   { label: 'Social Media', icon: 'fa-globe',       bg: '#EFF6FF', text: '#3B82F6' },
+        bank:     { label: 'Finance',      icon: 'fa-wallet',      bg: '#ECFDF5', text: '#10B981' },
+        wireless: { label: 'Wireless',     icon: 'fa-wifi',        bg: '#F0F9FF', text: '#0EA5E9' },
+        tv:       { label: 'TV & Ent.',    icon: 'fa-tv',          bg: '#FAF5FF', text: '#8B5CF6' },
+        auto:     { label: 'Auto / Car',   icon: 'fa-car',         bg: '#FEF2F2', text: '#EF4444' },
+        insurance:{ label: 'Insurance',    icon: 'fa-file-shield', bg: '#FFF7ED', text: '#F97316' },
+        home:     { label: 'Home',         icon: 'fa-home',        bg: '#FFFBEB', text: '#F59E0B' },
+        work:     { label: 'Business',     icon: 'fa-briefcase',   bg: '#F8FAFC', text: '#64748B' },
+        other:    { label: 'Other',        icon: 'fa-box-open',    bg: '#F3F4F6', text: '#4B5563' }
     };
 
     items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'card';
-        // Card တစ်ခုလုံးကို နှိပ်ရင် Detail View ပြမယ်
         div.onclick = () => viewItemDetail(item.id); 
-        
-        const starClass = item.isFav ? 'fas text-yellow' : 'far';
-        const catName = catMap[item.category] || 'Other';
+
+        const starClass = item.isFav ? 'fas text-yellow active' : 'far';
+        const style = styleMap[item.category] || styleMap['other'];
 
         div.innerHTML = `
             <div class="card-header">
-                <div class="card-category">${catName}</div>
+                <!-- ★ ICON + LABEL GROUP ★ -->
+                <div class="cat-group">
+                    <div class="cat-icon-large" style="background: ${style.bg}; color: ${style.text};">
+                        <i class="fas ${style.icon}"></i>
+                    </div>
+                    <!-- ဘေးနားက စာသား -->
+                    <span class="cat-title-label" style="color:${style.text}">${style.label}</span>
+                </div>
+
                 <div class="card-actions">
-                    <!-- Buttons click event propagation stop (Card click မဖြစ်အောင်) -->
-                    <button onclick="event.stopPropagation(); toggleFav('${item.id}')" title="Favorite">
+                    <button onclick="event.stopPropagation(); toggleFav('${item.id}')" class="btn-star ${item.isFav ? 'active' : ''}">
                         <i class="${starClass} fa-star"></i>
                     </button>
-                    <button onclick="event.stopPropagation(); editItem('${item.id}')" title="Edit">
+                    <button onclick="event.stopPropagation(); editItem('${item.id}')">
                         <i class="fas fa-pen"></i>
                     </button>
-                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" title="Delete" style="color:#EF4444;">
+                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="btn-del">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="card-title">${item.title}</div>
-            <div style="font-size:12px; color:#94a3b8; margin-top:5px;">Tap to view details</div>
+            <div class="card-content">
+                <div class="card-title">${item.title}</div>
+                <div class="card-user">${item.username || 'No Username'}</div>
+            </div>
         `;
         listDiv.appendChild(div);
     });
@@ -374,35 +388,48 @@ function viewItemDetail(id) {
     const item = vaultItems.find(i => i.id === id);
     if(!item) return;
 
-    const catMap = {
-        social: 'Social Media', bank: 'Finance / Bank', home: 'Home / Utilities', work: 'Work / Business',
-        wireless: 'Wireless / Mobile', tv: 'TV / Entertainment', auto: 'Auto / Car', insurance: 'Insurance', other: 'Other'
+    // Styling Logic (အရင်အတိုင်း)
+    const styleMap = {
+        social:   { icon: 'fa-globe',       bg: '#EFF6FF', text: '#3B82F6' },
+        bank:     { icon: 'fa-wallet',      bg: '#ECFDF5', text: '#10B981' },
+        wireless: { icon: 'fa-wifi',        bg: '#F0F9FF', text: '#0EA5E9' },
+        tv:       { icon: 'fa-tv',          bg: '#FAF5FF', text: '#8B5CF6' },
+        auto:     { icon: 'fa-car',         bg: '#FEF2F2', text: '#EF4444' },
+        insurance:{ icon: 'fa-file-shield', bg: '#FFF7ED', text: '#F97316' },
+        home:     { icon: 'fa-home',        bg: '#FFFBEB', text: '#F59E0B' },
+        work:     { icon: 'fa-briefcase',   bg: '#F8FAFC', text: '#64748B' },
+        other:    { icon: 'fa-box-open',    bg: '#F3F4F6', text: '#4B5563' }
     };
+    const style = styleMap[item.category] || styleMap['other'];
 
-    document.getElementById('view-cat').innerText = catMap[item.category] || 'Other';
+    document.getElementById('view-icon-box').style.backgroundColor = style.bg;
+    document.getElementById('view-icon-box').style.color = style.text;
+    document.getElementById('view-icon').className = `fas ${style.icon}`;
+    
     document.getElementById('view-title').innerText = item.title;
+    document.getElementById('view-cat').innerText = item.category.toUpperCase();
     document.getElementById('view-user').innerText = item.username || '-';
     document.getElementById('view-pass').innerText = item.pass;
-    document.getElementById('view-note').innerText = item.note || 'No notes.';
-    
-    // URL Logic
-    const urlBox = document.getElementById('view-url-box');
-    const urlLink = document.getElementById('view-url');
+    document.getElementById('view-note').innerText = item.note || 'No notes added.';
+
+    // ★ URL DISPLAY LOGIC (အဓိက အပိုင်း) ★
+    const urlContainer = document.getElementById('view-url-container');
+    const urlBtn = document.getElementById('view-url');
+
     if (item.url && item.url.trim() !== "") {
-        urlBox.style.display = 'block';
-        // Add https if missing
-        let href = item.url;
+        urlContainer.style.display = 'block'; // ရှိရင် ဖော်မယ်
+        let href = item.url.trim();
+        // https မပါရင် ထည့်ပေးမယ်
         if (!/^https?:\/\//i.test(href)) { href = 'https://' + href; }
-        urlLink.href = href;
+        urlBtn.href = href;
     } else {
-        urlBox.style.display = 'none';
+        urlContainer.style.display = 'none'; // မရှိရင် ဖျောက်မယ်
     }
 
-    // Reset blur
+    // Reset Blur
     document.getElementById('view-pass').classList.remove('revealed');
     document.getElementById('view-pass').classList.add('blur-text');
 
-    // Show Modal
     document.getElementById('view-modal').style.display = 'flex';
 }
 
@@ -419,15 +446,20 @@ function saveEntry() {
     const pass = document.getElementById('inp-pass').value;
     const cat = document.getElementById('inp-cat').value;
     const note = document.getElementById('inp-note').value;
-    const url = document.getElementById('inp-url').value; // ★ URL Field ★
+    
+    // ★ URL ကို Input ကနေ ယူမည် ★
+    const url = document.getElementById('inp-url').value; 
+
     const id = document.getElementById('entry-id').value || Date.now().toString();
 
     if(!title || !pass) return alert("Title and Password required");
 
+    // အဟောင်းက Fav status ကို ပြန်ယူမယ်
     let isFav = false;
     const existing = vaultItems.find(i => i.id === id);
     if(existing) isFav = existing.isFav;
 
+    // ★ URL ကို Object ထဲ ထည့်သိမ်းမည် ★
     const newItem = { id, title, username: user, pass, category: cat, note, url, isFav };
 
     if (document.getElementById('entry-id').value) {
@@ -454,11 +486,13 @@ function editItem(id) {
     const item = vaultItems.find(i => i.id === id);
     document.getElementById('entry-id').value = item.id;
     document.getElementById('inp-title').value = item.title;
-    document.getElementById('inp-user').value = item.username;
+    document.getElementById('inp-user').value = item.username || '';
     document.getElementById('inp-pass').value = item.pass;
     document.getElementById('inp-cat').value = item.category;
     document.getElementById('inp-note').value = item.note || '';
-    document.getElementById('inp-url').value = item.url || ''; // ★ URL Populate ★
+    
+    // ★ URL ကို Edit Box မှာ ပြန်ထည့်ပေးမယ် ★
+    document.getElementById('inp-url').value = item.url || ''; 
     
     openModal('edit');
 }

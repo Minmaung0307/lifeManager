@@ -89,7 +89,8 @@ body {
 /* Sidebar (Desktop) */
 .sidebar {
   width: 260px;
-  background: var(--sidebar);
+  /* background: var(--sidebar); */
+  background: linear-gradient(90deg, #001f16, #463100eb);
   color: white;
   display: flex;
   flex-direction: column;
@@ -330,15 +331,6 @@ header {
 }
 
 /* Card Design */
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-  transition: 0.2s;
-  position: relative;
-}
 .card:hover {
   transform: translateY(-4px);
   box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.08);
@@ -375,10 +367,13 @@ header {
 }
 
 .card-title {
-  font-weight: 700;
-  font-size: 16px;
+  padding-left: 7px;
+  font-size: 11px;
   margin-bottom: 4px;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card-user {
   font-size: 13px;
@@ -407,15 +402,6 @@ header {
 }
 
 /* List Mode Specifics */
-.list-layout .card {
-  flex-direction: row;
-  align-items: center;
-  padding: 15px 20px;
-}
-.list-layout .card-header {
-  margin: 0;
-  margin-right: 20px;
-}
 .list-layout .card-title {
   margin: 0;
   min-width: 150px;
@@ -507,6 +493,9 @@ header {
 
 .modal-body {
   width: 100%;
+  padding: 25px !important;
+  overflow-y: auto;
+  flex: 1;
   box-sizing: border-box; /* Padding ကြောင့် ဆိုဒ်မပြောင်းအောင် */
 }
 
@@ -650,7 +639,7 @@ textarea:focus {
     padding: 0 15px;
 
     border-bottom: 1px solid var(--border);
-    background: white;
+    background: linear-gradient(90deg, #5fffd4c9, #effe7bc4);
     z-index: 5000 !important; /* Modal အောက်၊ Content အပေါ် */
     overflow: hidden; /* Scroll logic inside container */
   }
@@ -825,6 +814,105 @@ textarea:focus {
     grid-template-columns: 1fr; /* တစ်တိုင်တည်း */
     padding-bottom: 120px;
   }
+
+  .list-layout .cat-icon-large {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
+
+  .cat-title-label {
+    font-size: 14px;
+  }
+  .cat-icon-large {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
+
+  .list-layout { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 10px; 
+        padding-bottom: 90px; 
+    }
+    
+    .list-layout .card {
+        display: flex;
+        flex-direction: row; /* ဘေးတိုက်စီမယ် */
+        align-items: center; /* ဒေါင်လိုက် အလယ်တည့်တည့် (Vertical Center) */
+        padding: 10px 15px;
+        border-radius: 14px;
+        min-height: 60px; /* အနည်းဆုံး အမြင့် */
+        position: relative; /* ခလုတ်တွေကို နေရာချဖို့ Reference */
+        gap: 0; /* Gap ကို ဖယ်လိုက်မယ် (Margin နဲ့ ထိန်းမယ်) */
+    }
+    
+    /* 1. Icon Section */
+    .list-layout .card-header {
+        margin-bottom: 0;
+        width: auto;
+        display: block; /* Flex ဖြုတ်မယ် */
+    }
+    
+    .list-layout .cat-group {
+        display: block;
+        width: auto;
+        margin-right: 12px; /* Icon နဲ့ စာ ကြားကွာဟချက် */
+    }
+
+    .list-layout .cat-icon-large {
+        width: 40px; 
+        height: 40px; 
+        font-size: 18px; 
+        border-radius: 10px;
+    }
+    
+    /* Mobile List မှာ Category Name ရှုပ်လို့ ဖျောက်ထားမယ် (Icon အရောင်နဲ့ သိသာလို့) */
+    .list-layout .cat-title-label {
+        display: none; 
+    }
+    
+    /* 2. Content Section (Title) */
+    .list-layout .card-content {
+        flex: 1; /* ကျန်တဲ့နေရာ အကုန်ယူ */
+        min-width: 0; /* စာရှည်ရင် ... ဖြစ်အောင် */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-right: 90px; /* ★ ခလုတ်တွေနဲ့ မထပ်အောင် ညာဘက်နေရာချန်မယ် ★ */
+    }
+
+    .list-layout .card-title { 
+        font-size: 14px; 
+        margin-bottom: 2px; 
+        line-height: 1.3;
+    }
+    .list-layout .card-user { 
+        font-size: 11px; 
+        margin: 0; 
+    }
+    
+    /* 3. Actions Buttons (ညာဘက် အသေကပ်) */
+    .list-layout .card-actions {
+        position: absolute; /* Card ပေါ်မှာ ပျံနေမယ် */
+        right: 10px;
+        top: 50%; /* အပေါ်အောက် အလယ် */
+        transform: translateY(-50%); /* အလယ်တည့်တည့်ညှိ */
+        
+        display: flex;
+        gap: 5px;
+        background: rgba(255,255,255,0.9); /* စာတွေနဲ့ထပ်ရင် နောက်ခံကာမယ် */
+        padding-left: 5px;
+    }
+    
+    .list-layout .card-actions button {
+        width: 30px; 
+        height: 30px; 
+        font-size: 13px;
+        border-radius: 8px;
+        background: #F1F5F9;
+    }
 }
 
 .btn-mobile-logout {
@@ -1065,24 +1153,47 @@ textarea:focus {
 .card {
   background: white;
   padding: 20px;
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
   position: relative;
-  cursor: pointer; /* နှိပ်လို့ရကြောင်းပြ */
+  cursor: pointer;
+  overflow: hidden; /* နောက်ခံအရောင်တွေ လျှံမထွက်အောင် */
+  height: 75px;
 }
+
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1);
   border-color: var(--primary);
 }
 
+/* Card Header Layout */
 .card-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  align-items: flex-start; /* Icon ကြီးနေလို့ အပေါ်ကပ်မယ် */
+  margin-bottom: 15px;
 }
+
+/* Big Category Icon */
+.cat-icon-large {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0; /* Icon မပိန်သွားအောင် */
+  transition: transform 0.2s;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); /* အတွင်းဘောင်ပါးပါး */
+}
+.card:hover .cat-icon-large {
+  transform: scale(1.1) rotate(-5deg); /* Hover လုပ်ရင် လှုပ်မယ် */
+}
+
 .card-category {
   font-size: 12px;
   font-weight: 600;
@@ -1096,11 +1207,16 @@ textarea:focus {
 }
 
 /* Card Content Clean Up */
-.card-title {
-  font-weight: 700;
-  font-size: 16px;
-  margin: 5px 0;
-  color: var(--text);
+.card-content {
+  margin-top: 5px;
+}
+
+.card-user {
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card-user,
 .card-pass {
@@ -1110,25 +1226,58 @@ textarea:focus {
 /* Action Buttons (Right Aligned) */
 .card-actions {
   display: flex;
-  gap: 5px;
+  gap: 6px;
 }
 .card-actions button {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: transparent;
+  border: 1px solid transparent;
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10; /* Card click ထက် အပေါ်ရောက်အောင် */
+  transition: 0.2s;
 }
 .card-actions button:hover {
-  background: white;
-  border-color: var(--primary);
-  color: var(--primary);
+  background: #f1f5f9;
+  color: var(--text);
+  border-color: #e2e8f0;
+}
+
+.btn-star.active {
+  color: #f59e0b !important;
+}
+.btn-del:hover {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border-color: #fecaca !important;
+}
+
+.list-layout .card {
+  flex-direction: row;
+  align-items: center;
+  /* padding: 12px 20px; */
+  /* gap: 20px; */
+}
+.list-layout .card-header {
+  margin: 0;
+}
+.list-layout .cat-icon-large {
+  width: 48px;
+  height: 48px;
+  font-size: 22px;
+} /* List မှာ နည်းနည်းပြန်သေးမယ် */
+.list-layout .card-content {
+    height: 45px;
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+.list-layout .card-actions {
+  margin-left: auto;
 }
 
 /* --- VIEW DETAILS MODAL STYLING --- */
@@ -1204,4 +1353,223 @@ textarea:focus {
   color: #334155;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+
+/* --- BEAUTIFUL VIEW MODAL --- */
+.view-card {
+  padding: 0 !important;
+  width: 95% !important;
+  max-width: 500px !important;
+  border-radius: 24px;
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal Body Scroll Fix */
+.view-card .modal-body {
+  overflow-y: auto; /* Scroll ဆွဲလို့ရမယ် */
+  padding: 30px;
+  flex: 1; /* ကျန်တဲ့နေရာအကုန်ယူမယ် */
+  max-height: calc(90vh - 120px); /* Header နှုတ်ပြီး ကျန်တာ Scroll */
+}
+
+/* Header Styling */
+.view-header-section {
+  background: #f8fafc;
+  padding: 30px 20px;
+  flex-shrink: 0; /* Scroll ဆွဲရင် Header မပါသွားအောင် */
+  text-align: center;
+  position: relative;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Icon နဲ့ စာသား တွဲထားမည့် Group */
+.cat-group {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Icon နဲ့ စာကြား ကွာဟချက် */
+  flex: 1;
+  overflow: hidden; /* စာရှည်ရင် ပြတ်မထွက်အောင် */
+}
+
+/* Category Title Styling */
+.cat-title-label {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* List View မှာ စာသားကို ပိုထင်ရှားစေမယ် */
+.list-layout .cat-title-label {
+  font-size: 16px;
+}
+
+.view-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  color: #64748b;
+  transition: 0.2s;
+}
+.view-close-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.view-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 15px;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+#view-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.view-badge {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+/* Visit Button */
+.btn-visit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transition: transform 0.2s;
+  width: auto;
+}
+.btn-visit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4);
+}
+
+.note-content-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 15px;
+
+  /* Text Alignment */
+  text-align: left; /* ဘယ်ဘက်ကပ်မယ် */
+  line-height: 1.6;
+  font-size: 14px;
+  color: #334155;
+  white-space: pre-wrap; /* စာကြောင်းအဆင်း (Enter) တွေကို သိအောင် */
+  word-break: break-word; /* စာရှည်ရင် အောက်ဆင်းအောင် */
+}
+
+/* Details Grid */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.detail-box {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+.detail-box.full-width {
+  margin-top: 0;
+}
+
+.detail-box label {
+  text-align: left; /* Label ကိုလည်း ဘယ်ကပ်မယ် */
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+/* Copy Row */
+.copy-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.copy-wrapper span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.btn-copy {
+  background: white;
+  border: 1px solid #e2e8f0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-copy:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.note-content {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Blur Text Logic */
+.blur-text {
+  filter: blur(5px);
+  cursor: pointer;
+  user-select: none;
+  transition: 0.2s;
+}
+.blur-text.revealed {
+  filter: none;
+  user-select: text;
 }
