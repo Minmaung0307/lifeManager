@@ -10,9 +10,13 @@ let tokenClient;
 let gapiInited = false;
 let gisInited = false;
 
-const DATA_FILE_NAME = "cloud_keeper_data_v3.json";
+const DATA_FILE_NAME = "cloud_keeper_encrypted_v1.json"; 
+
 let driveFileId = null;
 let vaultItems = [];
+let encryptedString = ""; // Raw Data from Drive
+let MASTER_KEY = null; // Key in RAM only
+let isNewUser = false;
 let currentFilter = 'all';
 let currentView = 'grid';
 
@@ -23,32 +27,22 @@ function gapiLoaded() {
 
 async function initializeGapiClient() {
     await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
-    gapiInited = true;
-    checkAuth();
+    gapiInited = true; checkAuth();
 }
-
 function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID, scope: SCOPES, callback: '',
     });
-    gisInited = true;
-    checkAuth();
+    gisInited = true; checkAuth();
 }
-
 function checkAuth() {
-    // 1. Check if both libraries loaded
-    if (!gapiInited || !gisInited) return;
-
-    // 2. Check LocalStorage for existing token
+    // Check LocalStorage for existing session
     const storedToken = localStorage.getItem('g_token');
     const storedExpiry = localStorage.getItem('g_token_exp');
-    
-    if (storedToken && storedExpiry && Date.now() < parseInt(storedExpiry)) {
-        // Restore Token
+    if (gapiInited && gisInited && storedToken && storedExpiry && Date.now() < parseInt(storedExpiry)) {
         gapi.client.setToken({ access_token: storedToken });
-        showApp();
+        initDriveData(); // Token ရှိရင် Drive စဆွဲမယ်
     } else {
-        // Show Login
         document.getElementById('login-view').style.display = 'flex';
     }
 }
@@ -56,16 +50,11 @@ function checkAuth() {
 // --- 3. AUTHENTICATION ---
 function handleAuthClick() {
     tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-            throw (resp);
-        }
-        
-        // Save Token (Valid for 1 hour)
-        const expiresIn = 3500 * 1000; // ~58 mins
+        if (resp.error !== undefined) throw (resp);
+        const expiresIn = 3500 * 1000; 
         localStorage.setItem('g_token', resp.access_token);
         localStorage.setItem('g_token_exp', Date.now() + expiresIn);
-
-        showApp();
+        await initDriveData();
     };
     tokenClient.requestAccessToken({ prompt: 'consent' });
 }
@@ -89,7 +78,9 @@ function handleSignoutClick() {
 
 // --- 4. DRIVE SYNC ENGINE (FIXED SPINNER) ---
 async function initDriveData() {
+    document.getElementById('login-view').style.display = 'none';
     showSyncStatus(true);
+    
     try {
         // User Profile
         try {
@@ -109,22 +100,79 @@ async function initDriveData() {
         
         const files = response.result.files;
         if (files && files.length > 0) {
+            // File Found -> Download Encrypted Data
             driveFileId = files[0].id;
-            await loadFileContent();
+            const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
+            
+            // Result က JSON Object (encrypt လုပ်ထားတဲ့ text ပါမယ်)
+            const result = res.result; 
+            encryptedString = result.data || ""; // "U2FsdGVkX1..."
+            
+            // Show Unlock Screen
+            isNewUser = false;
+            document.getElementById('unlock-title').innerText = "Unlock Vault";
+            document.getElementById('unlock-msg').innerText = "Enter Master Password to Decrypt";
+            document.getElementById('unlock-view').style.display = 'flex';
+
         } else {
-            await createDriveFile();
+            // New User -> Create File & Set Password
+            isNewUser = true;
+            document.getElementById('unlock-title').innerText = "Create Master Password";
+            document.getElementById('unlock-msg').innerText = "Set a password to encrypt your data.";
+            document.getElementById('unlock-view').style.display = 'flex';
         }
     } catch (err) {
-        console.error("Drive Error", err);
-        if(err.status === 401) handleSignoutClick(); // Logout if token expired
-        else alert("Sync Error: " + err.message);
+        if(err.status === 401) handleSignoutClick();
+        else alert("Drive Error: " + err.message);
     } finally {
-        showSyncStatus(false); // ★ MUST RUN ★
+        showSyncStatus(false);
     }
 }
 
+// --- 5. UNLOCK / DECRYPT ---
+async function unlockVault() {
+    const pass = document.getElementById('master-password').value;
+    if(!pass) return alert("Password is required");
+
+    if (isNewUser) {
+        // User အသစ်ဆိုရင် ဒါကို Master Key အဖြစ်သတ်မှတ်ပြီး File အသစ်ဆောက်မယ်
+        MASTER_KEY = pass;
+        vaultItems = [];
+        await createDriveFile(); // Create empty encrypted file
+        enterApp();
+    } else {
+        // User ဟောင်းဆိုရင် Decrypt စမ်းမယ်
+        try {
+            if(!encryptedString) {
+                vaultItems = []; // Empty file case
+            } else {
+                const bytes = CryptoJS.AES.decrypt(encryptedString, pass);
+                const originalText = bytes.toString(CryptoJS.enc.Utf8);
+                if (!originalText) throw new Error("Wrong Password");
+                vaultItems = JSON.parse(originalText);
+            }
+            // Success
+            MASTER_KEY = pass;
+            enterApp();
+        } catch (e) {
+            alert("Incorrect Password!");
+            document.getElementById('master-password').value = '';
+        }
+    }
+}
+
+function enterApp() {
+    document.getElementById('unlock-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'flex';
+    renderList();
+}
+
+// --- 6. SAVE (ENCRYPT & UPLOAD) ---
 async function createDriveFile() {
-    const fileContent = { items: [] };
+    // Encrypt empty array
+    const cipher = CryptoJS.AES.encrypt(JSON.stringify([]), MASTER_KEY).toString();
+    const fileContent = { data: cipher };
+    
     const file = new Blob([JSON.stringify(fileContent)], {type: 'application/json'});
     const metadata = { 'name': DATA_FILE_NAME, 'mimeType': 'application/json' };
     const accessToken = gapi.client.getToken().access_token;
@@ -139,8 +187,6 @@ async function createDriveFile() {
     });
     const val = await res.json();
     driveFileId = val.id;
-    vaultItems = [];
-    renderList();
 }
 
 async function loadFileContent() {
@@ -152,7 +198,10 @@ async function loadFileContent() {
 async function saveToDrive() {
     showSyncStatus(true);
     try {
-        const content = { items: vaultItems };
+        // Encrypt Data
+        const cipher = CryptoJS.AES.encrypt(JSON.stringify(vaultItems), MASTER_KEY).toString();
+        const content = { data: cipher };
+
         const accessToken = gapi.client.getToken().access_token;
         await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
             method: 'PATCH',
@@ -162,7 +211,7 @@ async function saveToDrive() {
             }),
             body: JSON.stringify(content),
         });
-        console.log("Saved.");
+        console.log("Encrypted & Saved.");
     } catch(e) {
         alert("Save Failed: " + e.message);
     } finally {
@@ -195,9 +244,14 @@ function toggleView(view) {
 function toggleFav(id) {
     const idx = vaultItems.findIndex(i => i.id === id);
     if(idx !== -1) {
+        // Status ပြောင်းမယ် (True <-> False)
         vaultItems[idx].isFav = !vaultItems[idx].isFav;
+        
+        // UI ပြန်ဆွဲမယ်
         renderList();
-        saveToDrive();
+        
+        // Drive ပေါ် Save မယ်
+        saveToDrive(); 
     }
 }
 
@@ -206,13 +260,23 @@ function renderList() {
     const search = document.getElementById('search-input').value.toLowerCase();
     listDiv.innerHTML = '';
 
+    // Filter Logic
     let items = vaultItems.filter(i => {
         const matchesSearch = i.title.toLowerCase().includes(search);
+        
         if (currentFilter === 'all') return matchesSearch;
         if (currentFilter === 'fav') return i.isFav && matchesSearch;
+        
+        // Category Filter
         return i.category === currentFilter && matchesSearch;
     });
 
+    if (items.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; width:100%; color:#94a3b8; margin-top:50px;">No items found.</p>';
+        return;
+    }
+
+    // Icon Map
     const icons = {
         social: 'fa-globe', bank: 'fa-wallet', home: 'fa-home', work: 'fa-briefcase',
         wireless: 'fa-wifi', tv: 'fa-tv', auto: 'fa-car', insurance: 'fa-file-contract',
@@ -222,19 +286,32 @@ function renderList() {
     items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'card';
+        
+        // Favorite Active Class Check
+        const starClass = item.isFav ? 'fas text-yellow' : 'far';
+        
         div.innerHTML = `
             <div class="card-header">
                 <div class="cat-icon"><i class="fas ${icons[item.category] || 'fa-key'}"></i></div>
-                <div class="card-title-wrap">
+                
+                <div class="card-title-wrap" style="flex-grow:1; margin-left:15px;">
                     <div class="card-title">${item.title}</div>
-                    <div class="card-user">${item.user || 'No User'}</div>
+                    <div class="card-user">${item.username || 'No Username'}</div>
                 </div>
+
                 <div class="card-actions">
-                    <button class="btn-star ${item.isFav ? 'active' : ''}" onclick="toggleFav('${item.id}')">
-                        <i class="${item.isFav ? 'fas' : 'far'} fa-star"></i>
+                    <!-- ★ Favorite Button Added Here ★ -->
+                    <button onclick="toggleFav('${item.id}')" title="Favorite">
+                        <i class="${starClass} fa-star" style="font-size:16px;"></i>
                     </button>
-                    <button onclick="editItem('${item.id}')"><i class="fas fa-pen"></i></button>
-                    <button onclick="deleteItem('${item.id}')" style="color:#EF4444;"><i class="fas fa-trash"></i></button>
+
+                    <button onclick="editItem('${item.id}')" title="Edit">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    
+                    <button onclick="deleteItem('${item.id}')" title="Delete" style="color:#EF4444;">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
             
@@ -264,6 +341,7 @@ function saveEntry() {
 
     if(!title || !pass) return alert("Title and Password required");
 
+    // အဟောင်းရှိရင် Fav status ကို ပြန်ယူမယ် (မပျောက်အောင်)
     let isFav = false;
     const existing = vaultItems.find(i => i.id === id);
     if(existing) isFav = existing.isFav;
@@ -321,9 +399,30 @@ function closeGuide() { document.getElementById('guide-modal').style.display = '
 
 function toggleBlur(el) { 
     const span = el.querySelector('span');
-    span.classList.toggle('blur'); 
-    span.classList.toggle('no-blur');
+    span.classList.toggle('blur'); span.classList.toggle('no-blur');
 }
 function genPass() {
-    document.getElementById('inp-pass').value = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+    document.getElementById('inp-pass').value = Math.random().toString(36).slice(-8);
 }
+
+function openModal() { document.getElementById('entry-modal').style.display = 'flex'; }
+function closeModal() { document.getElementById('entry-modal').style.display = 'none'; }
+
+// --- GUIDE & PRIVACY TABS ---
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('tab-'+tabName).classList.add('active');
+    // Highlight button logic
+    const btns = document.querySelectorAll('.tab-link');
+    if(tabName === 'manual') btns[0].classList.add('active');
+    else btns[1].classList.add('active');
+}
+
+// Modal Functions (Update)
+function openGuide() { 
+    document.getElementById('guide-modal').style.display = 'flex'; 
+    switchTab('manual');
+}
+function closeGuide() { document.getElementById('guide-modal').style.display = 'none'; }
