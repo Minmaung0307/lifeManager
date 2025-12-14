@@ -262,16 +262,23 @@ header {
   background: var(--primary);
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 12px 20px;
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
   box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
   transition: 0.2s;
+  width: 100%;
 }
+
+#unlock-view .btn-primary i {
+  font-size: 18px; /* Icon ဆိုဒ် */
+}
+
 .btn-primary:active {
   transform: scale(0.95);
 }
@@ -627,84 +634,122 @@ textarea:focus {
   /* Mobile Top Bar (Chips Style) */
   .sidebar {
     width: 100%;
-    height: 70px;
+    height: 65px;
     position: fixed;
     top: 0;
     left: 0;
+
+    display: flex; /* Flexbox သုံးမယ် */
     flex-direction: row;
+    justify-content: space-between; /* ဘယ်ညာ ခွဲထုတ်မယ် */
+    align-items: center;
     padding: 0 15px;
+
     border-bottom: 1px solid var(--border);
     background: white;
-    z-index: 1000;
+    z-index: 5000 !important; /* Modal အောက်၊ Content အပေါ် */
     overflow: hidden; /* Scroll logic inside container */
-    align-items: center;
   }
+
   .brand,
-  .menu-label {
-    display: none;
+  .menu-label,
+  .btn-sm {
+    display: none !important;
+  }
+
+  .user-details,
+  .btn-sm,
+  .btn-logout-icon {
+    pointer-events: auto !important; /* နှိပ်လို့ရအောင် ဖွင့်ပေးမယ် */
+    cursor: pointer;
   }
 
   /* Scroll Container */
   .menu-container {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
+    display: flex; /* Flexbox သုံးမယ် */
+    flex-direction: row; /* ဘေးတိုက်စီမယ် (အရေးကြီးဆုံး) */
+    align-items: center; /* အလယ်တည့်တည့် */
+    gap: 10px; /* ခလုတ်တွေကြား အကွာအဝေး */
     width: 100%;
-    height: 100%;
-    overflow-x: auto;
+
+    /* Scroll Settings */
+    overflow-x: auto; /* ဘယ်ညာ Scroll ဖွင့်မယ် */
+    overflow-y: hidden; /* အပေါ်အောက် ပိတ်မယ် */
+    white-space: nowrap; /* စာကြောင်း မကျိုးစေရ */
+
+    /* Padding */
+    padding: 0 15px;
+
+    /* Smooth Scroll for iOS */
     -webkit-overflow-scrolling: touch;
-    padding-right: 20px;
+
+    /* Scrollbar ဖျောက်ခြင်း */
+    scrollbar-width: none;
   }
 
+  .menu-container::-webkit-scrollbar {
+    display: none;
+  }
   /* Menu Items (Pills) */
   .menu-item {
-    background: #f1f5f9;
-    border-radius: 30px;
+    /* မကျုံ့သွားအောင် တားမယ် (အရေးကြီးဆုံး) */
+    flex-shrink: 0;
+
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
     padding: 8px 16px;
     margin: 0;
-    flex-shrink: 0;
-    font-weight: 500;
+
     font-size: 13px;
-    color: var(--text-muted);
-    border: 1px solid transparent;
+    color: #64748b;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
+
   .menu-item.active {
     background: var(--primary);
     color: white;
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    border-color: var(--primary);
   }
+
   .menu-item i {
     font-size: 14px;
   }
 
   /* User Panel (Profile Pill) */
   .user-panel {
-    background: #f1f5f9;
-    padding: 5px 12px 5px 5px;
-    border-radius: 30px;
-    margin: 0;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
+    flex-shrink: 0; /* မကျုံ့စေရ */
+    margin-left: auto; /* ညာဘက်အစွန်ဆုံး တွန်းပို့မယ် (Optional) */
+    border-left: 1px solid #e2e8f0;
+    padding-left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   #user-avatar {
     width: 32px;
     height: 32px;
-    border: none;
+    border: 2px solid var(--primary);
   }
   .user-details {
     display: none;
   } /* Hide Name/Logout Text */
-  .btn-sm {
-    display: none;
-  }
+
   /* Show Logout Icon instead */
   .user-panel::after {
-    content: "\f2f5";
+    content: none;
     font-family: "Font Awesome 6 Free";
     font-weight: 900;
-    margin-left: 5px;
+    font-size: 18px;
     color: #ef4444;
     cursor: pointer;
+    padding: 5px; /* နှိပ်ရလွယ်အောင် */
+
+    /* ★ Click Event အလုပ်လုပ်အောင် ★ */
+    pointer-events: auto;
   }
 
   /* Content */
@@ -739,6 +784,7 @@ textarea:focus {
   .modal {
     align-items: flex-end; /* Bottom Sheet ပုံစံ */
     padding: 0;
+    z-index: 3000 !important;
   }
   .modal-content {
     width: 100%;
@@ -759,6 +805,21 @@ textarea:focus {
     grid-template-columns: 1fr;
     gap: 0;
   }
+
+  .btn-mobile-logout {
+    display: block !important;
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 5px;
+  }
+}
+
+.btn-mobile-logout {
+  display: none;
 }
 
 /* --- PROFESSIONAL MODAL & DOC STYLING --- */
@@ -947,3 +1008,47 @@ textarea:focus {
     font-size: 13px;
   }
 }
+
+/* --- ANNOUNCEMENT BANNER --- */
+.announcement-box {
+  background: linear-gradient(90deg, #ff7e5f, #feb47b); /* Sunset Orange */
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);
+  animation: slideDown 0.5s ease;
+}
+
+.announce-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.close-announce {
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.close-announce:hover {
+  opacity: 1;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- ANNOUNCEMENT BANNER Ends --- */

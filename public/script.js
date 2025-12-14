@@ -66,14 +66,21 @@ async function showApp() {
 }
 
 function handleSignoutClick() {
-    const token = gapi.client.getToken();
-    if (token !== null) {
-        google.accounts.oauth2.revoke(token.access_token);
-        gapi.client.setToken('');
-        localStorage.removeItem('g_token');
-        localStorage.removeItem('g_token_exp');
-        location.reload();
+    // Google API မပွင့်သေးရင်တောင် Logout ဖြစ်အောင်လုပ်မယ်
+    try {
+        const token = gapi.client.getToken();
+        if (token !== null) {
+            google.accounts.oauth2.revoke(token.access_token);
+            gapi.client.setToken('');
+        }
+    } catch (e) {
+        console.log("GAPI Error (Ignoring):", e);
     }
+
+    // Local Storage ရှင်းပြီး Reload လုပ်မယ်
+    localStorage.removeItem('g_token');
+    localStorage.removeItem('g_token_exp');
+    location.reload();
 }
 
 // --- 4. DRIVE SYNC ENGINE (FIXED SPINNER) ---
@@ -426,3 +433,146 @@ function openGuide() {
     switchTab('manual');
 }
 function closeGuide() { document.getElementById('guide-modal').style.display = 'none'; }
+
+// --- ANNOUNCEMENT SYSTEM ---
+// App စဖွင့်ရင် Check မယ်
+document.addEventListener("DOMContentLoaded", () => {
+    checkAnnouncement();
+});
+
+function checkAnnouncement() {
+    console.log("Checking for announcements..."); // Debugging
+
+    db.collection("config").doc("news").onSnapshot((doc) => {
+        const banner = document.getElementById("announcementBanner");
+        
+        if (doc.exists) {
+            const data = doc.data();
+            console.log("Announcement Data:", data); // Data ရမရ ကြည့်မယ်
+
+            if (data.active) {
+                document.getElementById("announceText").textContent = data.message;
+                banner.style.display = "flex";
+                
+                // အရောင်ပြောင်း Logic
+                if(data.type === 'danger') {
+                    banner.style.background = "linear-gradient(90deg, #ef4444, #f87171)";
+                } else {
+                    // Default Color (Reset ပြန်လုပ်ပေးရမယ်)
+                    banner.style.background = "linear-gradient(90deg, #ff7e5f, #feb47b)";
+                }
+            } else {
+                banner.style.display = "none";
+            }
+        } else {
+            console.log("No announcement document found!");
+            banner.style.display = "none";
+        }
+    }, (error) => {
+        // ★ Error တက်ရင် ဒီမှာပေါ်မယ် ★
+        console.error("Announcement Error:", error);
+    });
+}
+
+
+function closeAnnouncement() {
+    document.getElementById("announcementBanner").style.display = "none";
+}
+
+// --- ANNOUNCEMENT SYSTEM Ends ---
+
+// --- CHANGE PASSWORD LOGIC ---
+
+function openChangePassModal() {
+    document.getElementById('change-pass-modal').style.display = 'flex';
+    // Clear inputs
+    document.getElementById('cp-current').value = '';
+    document.getElementById('cp-new').value = '';
+    document.getElementById('cp-confirm').value = '';
+}
+
+// Modal ပိတ်ရန် (Global closeModal ကို upgrade လုပ်ပါ သို့မဟုတ် ဒါသီးသန့်သုံးပါ)
+// အစ်ကို့ script.js ထဲက closeModal ကို ID လက်ခံအောင် ပြင်ပေးရပါမယ် 👇
+/* 
+   function closeModal(modalId) {
+       // ID မပါလာရင် Default Modal (Entry Modal) ကို ပိတ်မယ်
+       if(!modalId) modalId = 'entry-modal';
+       document.getElementById(modalId).style.display = 'none';
+   }
+*/
+function closeModal(modalId) {
+    if (modalId) {
+        // ID ပါလာရင် အဲ့ဒီတစ်ခုကိုပဲ ပိတ်မယ်
+        document.getElementById(modalId).style.display = 'none';
+    } else {
+        // ID မပါလာရင် (Error မတက်အောင်) Modal အားလုံးကို လိုက်ပိတ်ပစ်မယ်
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }
+}
+
+async function handleChangePassword() {
+    const currentPass = document.getElementById('cp-current').value;
+    const newPass = document.getElementById('cp-new').value;
+    const confirmPass = document.getElementById('cp-confirm').value;
+    const btn = document.querySelector('#change-pass-modal .btn-save');
+
+    // 1. Validation
+    if (!currentPass || !newPass || !confirmPass) {
+        return alert("Please fill all fields.");
+    }
+
+    if (newPass !== confirmPass) {
+        return alert("New passwords do not match.");
+    }
+
+    if (newPass.length < 4) {
+        return alert("New password is too short.");
+    }
+
+    // 2. Verify Current Password (Memory ထဲက Key နဲ့ တိုက်စစ်မယ်)
+    if (currentPass !== MASTER_KEY) {
+        return alert("Current password is incorrect.");
+    }
+
+    if (!confirm("⚠️ Are you sure you want to change your Master Password?\n\nPlease write it down immediately!")) {
+        return;
+    }
+
+    // 3. Re-Encryption Process
+    try {
+        btn.innerText = "Re-encrypting & Saving...";
+        btn.disabled = true;
+
+        // Key အသစ် ပြောင်းမယ်
+        MASTER_KEY = newPass;
+
+        // Drive ပေါ်ကို Key အသစ်နဲ့ Encrypt လုပ်ပြီး ပြန်တင်မယ်
+        // (saveToDrive function က global MASTER_KEY ကို သုံးတဲ့အတွက် 
+        //  ဒီနေရာမှာ MASTER_KEY ပြောင်းလိုက်တာနဲ့ အသစ်နဲ့ Encrypt ဖြစ်သွားပါပြီ)
+        await saveToDrive();
+
+        alert("✅ Success! Your Master Password has been changed.");
+        
+        // Modal ပိတ်မယ်
+        document.getElementById('change-pass-modal').style.display = 'none';
+
+    } catch (err) {
+        console.error(err);
+        alert("Error updating password: " + err.message);
+        // Error တက်ရင် Key အဟောင်းပြန်ထားဖို့ ကြိုးစားသင့်တယ် (Optional)
+        MASTER_KEY = currentPass; 
+    } finally {
+        btn.innerText = "Update Password";
+        btn.disabled = false;
+    }
+}
+
+// Password အဖွင့်အပိတ် (Optional Helper)
+function togglePassVisibility(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// --- CHANGE PASSWORD LOGIC Ends ---

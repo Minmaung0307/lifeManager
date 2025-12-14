@@ -49,21 +49,21 @@
         <p class="note" id="unlock-msg">Enter Master Password to Decrypt</p>
 
         <div class="input-group" style="margin-top: 20px">
-            <!-- 
+          <!-- 
                    Browser ကို လှည့်စားရန်:
                    1. autocomplete="new-password" (အသစ်လို့ပြောရင် Browser က ဖြည့်ပေးဖို့ မကြိုးစားဘူး)
                    2. name="search_term" (Password လို့ နာမည်မပေးဘူး)
                 -->
-          <input 
-                    type="password" 
-                    id="master-password" 
-                    placeholder="Master Password" 
-                    style="text-align: center; letter-spacing: 2px;"
-                    autocomplete="new-password" 
-                    name="vault_unlock_key_unique"
-                    readonly 
-                    onfocus="this.removeAttribute('readonly');"
-                >
+          <input
+            type="password"
+            id="master-password"
+            placeholder="Master Password"
+            style="text-align: center; letter-spacing: 2px"
+            autocomplete="new-password"
+            name="vault_unlock_key_unique"
+            readonly
+            onfocus="this.removeAttribute('readonly');"
+          />
         </div>
 
         <button
@@ -71,7 +71,7 @@
           class="btn-primary"
           style="margin-top: 10px"
         >
-          <i class="fas fa-lock-open"></i> Unlock
+          <i class="fas fa-lock-open"></i>
         </button>
 
         <p
@@ -79,7 +79,8 @@
           style="color: #930e0e; font-size: 13px; margin-top: 15px"
         >
           <i class="fas fa-exclamation-triangle"></i> If you lose this password,
-          data is lost forever. <br> Security: Do not save this password in browser.
+          data is lost forever. <br />
+          Security: Do not save this password in browser.
         </p>
       </div>
     </div>
@@ -132,6 +133,13 @@
             <i class="fas fa-question-circle"></i> <span>Guide & Privacy</span>
           </button>
 
+          <div class="menu-label">Settings</div>
+          <!-- ခေါင်းစဉ်လေးခံလိုက်ရင် ပိုလှပါတယ် -->
+
+          <button class="menu-item" onclick="openChangePassModal()">
+            <i class="fas fa-key"></i> <span>Change Password</span>
+          </button>
+
           <!-- User Panel (Moved Inside) -->
           <div class="user-panel">
             <img
@@ -140,12 +148,23 @@
               alt="User"
               onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"
             />
+
             <div class="user-details">
               <span id="user-name">User</span>
               <button onclick="handleSignoutClick()" class="btn-sm">
                 Logout
               </button>
             </div>
+
+            <!-- ★ Mobile Only Logout Button ★ -->
+            <!-- CSS မှာ Desktop ဆို display:none လုပ်ထားမယ် -->
+            <button
+              onclick="handleSignoutClick()"
+              class="btn-mobile-logout"
+              title="Logout"
+            >
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
           </div>
         </div>
       </aside>
@@ -153,6 +172,22 @@
       <!-- Main Content -->
       <main class="main-area">
         <header>
+          <!-- ANNOUNCEMENT BANNER -->
+          <div
+            id="announcementBanner"
+            style="display: none"
+            class="announcement-box"
+          >
+            <div class="announce-content">
+              <i class="fas fa-bullhorn"></i>
+              <span id="announceText">Loading news...</span>
+            </div>
+            <i
+              class="fas fa-times close-announce"
+              onclick="closeAnnouncement()"
+            ></i>
+          </div>
+
           <div class="search-bar">
             <i class="fas fa-search"></i>
             <input
@@ -202,7 +237,7 @@
           <h3 id="modal-title">
             <i class="fas fa-pen-to-square"></i> New Account
           </h3>
-          <span onclick="closeModal()" class="close">&times;</span>
+          <span onclick="closeModal('entry-modal')" class="close">&times;</span>
         </div>
         <div class="modal-body">
           <input type="hidden" id="entry-id" />
@@ -279,128 +314,92 @@
         </div>
 
         <div class="modal-body scroll-body legal-body">
-          <!-- USER MANUAL CONTENT -->
+          <!-- TAB 1: USER MANUAL -->
           <div id="tab-manual" class="tab-content active">
-            <div class="doc-header"><h4>User Manual</h4></div>
-                <div class="doc-section">
-                    <h5>1. Master Password</h5>
-                    <p>When you first use the app, you will set a Master Password. This password is used to encrypt your data before sending it to Google Drive. We do not store this password.</p>
+            <div class="doc-header">
+              <h4>CloudKeeper User Manual</h4>
+              <p>Version 1.0.0</p>
             </div>
 
             <div class="doc-section">
-              <h5>1. System Architecture</h5>
+              <h5>1. Master Password</h5>
               <p>
-                CloudKeeper operates on a
-                <strong>Serverless Architecture</strong>. Unlike traditional
-                cloud services, we do not maintain a central database of your
-                information. Your Google Drive™ acts as the sole storage
-                facility for your encrypted vault.
+                When you first use the app, you will set a Master Password. This
+                password is used to encrypt your data before sending it to
+                Google Drive. We do not store this password.
               </p>
             </div>
 
             <div class="doc-section">
-              <h5>2. Encryption Mechanism</h5>
+              <h5>2. System Architecture</h5>
               <p>
-                All data entries are secured using
-                <strong>AES-256 (Advanced Encryption Standard)</strong> before
-                leaving your device. The encryption key is derived solely from
-                your Master Password.
+                CloudKeeper operates on a
+                <strong>Serverless Architecture</strong>. Your Google Drive™
+                acts as the sole storage facility for your encrypted vault.
+              </p>
+            </div>
+
+            <div class="doc-section">
+              <h5>3. Encryption Mechanism</h5>
+              <p>
+                All data entries are secured using <strong>AES-256</strong>.
               </p>
               <div class="alert-box warning">
                 <i class="fas fa-exclamation-triangle"></i>
-                <strong>Critical Warning:</strong> Since we utilize a
-                Zero-Knowledge protocol, we do not store your Master Password.
-                If you forget it, your data is cryptographically irretrievable.
+                <strong>Critical Warning:</strong> If you forget your Master
+                Password, your data is irretrievable.
               </div>
             </div>
 
             <div class="doc-section">
-              <h5>3. Getting Started</h5>
+              <h5>4. Getting Started</h5>
               <ul class="doc-list">
-                <li>
-                  <strong>Step 1 (Authentication):</strong> Authenticate using
-                  your Google Account to establish a secure connection with
-                  Google Drive API.
-                </li>
-                <li>
-                  <strong>Step 2 (Vault Creation):</strong> Upon first login,
-                  you will be prompted to create a Master Password. Ensure this
-                  is strong and memorable.
-                </li>
-                <li>
-                  <strong>Step 3 (Synchronization):</strong> Changes made to
-                  your vault are automatically synced to
-                  <code>cloud_keeper_data_v3.json</code> in your Drive's AppData
-                  folder.
-                </li>
+                <li><strong>Step 1:</strong> Sign in with Google.</li>
+                <li><strong>Step 2:</strong> Create Master Password.</li>
+                <li><strong>Step 3:</strong> Start adding accounts.</li>
               </ul>
             </div>
           </div>
 
-          <!-- PRIVACY POLICY CONTENT -->
+          <!-- TAB 2: PRIVACY POLICY -->
           <div id="tab-policy" class="tab-content">
             <div class="doc-header">
-                <h4>Privacy Policy</h4>
+              <h4>Privacy Policy</h4>
+              <p>Last Updated: December 2025</p>
             </div>
-                 <p>Your data is encrypted using AES-256 algorithm.</p>
-          </div>
 
             <div class="doc-section">
               <h5>1. Introduction</h5>
               <p>
-                CloudKeeper ("the Service") is developed as a standalone,
-                client-side application designed to provide secure data
-                management. We are committed to protecting your privacy and
-                ensuring you maintain full sovereignty over your data.
+                CloudKeeper is a standalone, client-side application. We
+                prioritize your privacy and data sovereignty.
               </p>
             </div>
 
             <div class="doc-section">
-              <h5>2. Data Sovereignty & Collection</h5>
-              <p>
-                We adhere to a strictly <strong>No-Logging Policy</strong>. The
-                Service functions as a conduit between your device and your
-                personal Google Drive storage.
-              </p>
+              <h5>2. Data Collection</h5>
+              <p>We adhere to a strictly <strong>No-Logging Policy</strong>.</p>
               <ul class="doc-list">
                 <li>
-                  We <strong>do not</strong> collect, store, or transmit your
-                  passwords, usernames, or notes to any external server other
-                  than your own Google Drive.
+                  We <strong>do not</strong> collect or store your passwords.
                 </li>
-                <li>
-                  We <strong>do not</strong> use analytics cookies or trackers
-                  to monitor your usage behavior.
-                </li>
+                <li>We <strong>do not</strong> track your usage behavior.</li>
               </ul>
             </div>
 
             <div class="doc-section">
-              <h5>3. Google Drive API Usage</h5>
+              <h5>3. Google Drive Usage</h5>
               <p>
-                The Service creates and accesses specific files within your
-                Google Drive storage for the sole purpose of data persistence.
-                This access is limited to:
+                The Service accesses only specific files created by this app
+                (<code>.json</code>) for data persistence.
               </p>
-              <ul>
-                <li>
-                  Reading and writing the encrypted vault file
-                  (<code>.json</code>).
-                </li>
-                <li>
-                  The App cannot access, read, or delete any other files in your
-                  Google Drive.
-                </li>
-              </ul>
             </div>
 
             <div class="doc-section">
-              <h5>4. Disclaimer of Liability</h5>
+              <h5>4. Disclaimer</h5>
               <p>
-                The Service is provided "as is", without warranty of any kind.
-                The developer shall not be liable for any data loss or damages
-                arising from the use of this software, including but not limited
-                to the loss of the Master Password.
+                The Service is provided "as is". The developer is not liable for
+                data loss due to forgotten passwords.
               </p>
             </div>
 
@@ -408,6 +407,96 @@
               <p>Developed by Independent Developer.</p>
               <p>Contact: your-email@example.com</p>
             </div>
+          </div>
+          <!-- End of Tab 2 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="change-pass-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-user-lock"></i> Change Master Password</h3>
+          <span onclick="closeModal('change-pass-modal')" class="close"
+            >&times;</span
+          >
+        </div>
+
+        <div class="modal-body">
+          <div
+            class="alert-box warning"
+            style="
+              margin-bottom: 20px;
+              font-size: 13px;
+              padding: 10px;
+              background: #fef2f2;
+              color: #991b1b;
+              border: 1px solid #fca5a5;
+              border-radius: 8px;
+            "
+          >
+            <i class="fas fa-exclamation-triangle"></i>
+            Warning: If you forget your new password, you will lose access to
+            all your data forever.
+          </div>
+
+          <!-- Current Password -->
+          <div class="input-group">
+            <label>Current Password</label>
+            <div class="pass-box">
+              <div class="icon-input">
+                <i class="fas fa-lock"></i>
+                <input
+                  type="password"
+                  id="cp-current"
+                  placeholder="Enter current password"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- New Password -->
+          <div class="input-group">
+            <label>New Password</label>
+            <div class="pass-box">
+              <div class="icon-input">
+                <i class="fas fa-key"></i>
+                <input
+                  type="password"
+                  id="cp-new"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <button onclick="togglePassVisibility('cp-new')" class="btn-gen">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirm New Password -->
+          <div class="input-group">
+            <label>Confirm New Password</label>
+            <div class="pass-box">
+              <div class="icon-input">
+                <i class="fas fa-check-circle"></i>
+                <input
+                  type="password"
+                  id="cp-confirm"
+                  placeholder="Repeat new password"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              onclick="handleChangePassword()"
+              class="btn-save"
+              style="background: #0f172a"
+            >
+              Update Password
+            </button>
           </div>
         </div>
       </div>
