@@ -143,6 +143,7 @@ body {
 }
 .menu-item:hover,
 .menu-item.active {
+    margin-top: 10px;
   background: var(--primary);
   color: white;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
