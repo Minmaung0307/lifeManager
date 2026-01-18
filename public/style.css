@@ -10,6 +10,10 @@
   --yellow: #f59e0b;
 }
 
+* {
+  box-sizing: border-box; /* Padding တွေ အားလုံးကို Width ထဲမှာပဲ ထည့်တွက်ခိုင်းတာပါ */
+}
+
 body {
   font-family: "Inter", sans-serif;
   background: var(--bg-body);
@@ -17,6 +21,8 @@ body {
   margin: 0;
   height: 100vh;
   overflow: hidden;
+  /* iOS safe area အတွက် */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* --- LOGIN SCREEN --- */
@@ -96,6 +102,7 @@ body {
   flex-direction: column;
   padding: 20px;
   flex-shrink: 0;
+  height: 100dvh; /* sidebar ကို အမြင့်အပြည့် အသေထားမယ် */
 }
 .brand {
   font-size: 22px;
@@ -113,6 +120,7 @@ body {
   gap: 5px;
   overflow-y: auto;
   padding-right: 5px;
+  margin-bottom: 10px;
 }
 .menu-container::-webkit-scrollbar {
   display: none;
@@ -154,8 +162,10 @@ body {
 
 /* User Panel */
 .user-panel {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 10px;
+  flex-shrink: 0;         /* အောက်ခြေက User Panel ကို လုံးဝ မမြုပ်သွားအောင် တားမယ် */
+  margin-top: auto;       /* အမြဲတမ်း အောက်ဆုံးမှာ ကပ်နေမယ် */
+  background: rgba(255, 255, 255, 0.01);
+  padding: 15px;
   border-radius: 12px;
   margin-top: auto;
   display: flex;
@@ -311,20 +321,8 @@ header {
   display: none;
 }
 
-/* Grid & List Layouts */
-.grid-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  /* gap: 20px; */
+/* List Layouts */
 
-  /* Scroll ပြဿနာရှင်းရန် */
-  /* overflow-y: auto; */
-  /* padding-bottom: 150px;  */
-  /* အောက်ဆုံးထိ Scroll ဆွဲလို့ရအောင် နေရာပိုချန်မယ် */
-  /* max-height: 100%;  */
-  /* Parent အမြင့်အတိုင်းယူမယ် */
-  align-content: start; /* Items တွေ အပေါ်ကစမယ် */
-}
 .list-layout {
   display: flex;
   flex-direction: column;
@@ -1865,11 +1863,6 @@ textarea:focus {
 }
 
 /* --- 1. GRID VIEW LAYOUT --- */
-.grid-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-}
 
 .grid-layout .card {
     flex-direction: column; /* အပေါ်အောက်စီမယ် */
@@ -1933,20 +1926,8 @@ textarea:focus {
 }
 
 /* --- LAYOUT WRAPPER (Scroll ဆွဲလို့ရအောင် ပြင်ထားသောအပိုင်း) --- */
-#data-list {
-    flex: 1;               /* ကျန်တဲ့ နေရာအလွတ်အကုန်ယူမယ် */
-    overflow-y: auto !important; /* Scroll ပြန်ဖွင့်မယ် */
-    min-height: 0;         /* Flexbox Scroll Fix */
-    padding: 10px 10px 150px 10px; /* အောက်ဆုံးမှာ ပစ္စည်းမမြုပ်အောင် နေရာချန်မယ် */
-}
 
 /* --- GRID VIEW LAYOUT --- */
-.grid-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    align-content: start;
-}
 
 .grid-layout .card {
     flex-direction: column !important; /* အပေါ်အောက်စီမယ် */
@@ -2010,13 +1991,6 @@ textarea:focus {
     overflow: hidden; /* Main body မလှုပ်စေရ */
 }
 
-#data-list {
-    flex: 1;
-    overflow-y: auto !important; /* ဒီနေရာမှာပဲ Scroll ဆွဲမယ် */
-    padding: 10px 10px 150px 10px;
-    min-height: 0; /* Flex scroll fix */
-}
-
 /* --- CARD SHARED STYLE --- */
 .card {
     background: white;
@@ -2046,11 +2020,6 @@ textarea:focus {
 .card-action-box .btn-del:hover { background: #fee2e2; color: #ef4444; }
 
 /* --- 1. GRID VIEW --- */
-.grid-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-}
 .grid-layout .card {
     flex-direction: column;
     padding: 15px;
@@ -2087,23 +2056,8 @@ textarea:focus {
 }
 
 /* --- LAYOUT WRAPPER (Scroll အောင်မြင်ဖို့ အဓိက အပိုင်း) --- */
-#data-list {
-    flex: 1;
-    overflow-y: auto !important; /* Scroll ရအောင် အတင်းခိုင်းမယ် */
-    min-height: 0; 
-    padding: 10px 10px 180px 10px; /* အောက်ဆုံးမှာ ပစ္စည်းတွေ မကပ်အောင် နေရာအများကြီး ချန်မယ် */
-    display: block; /* Flex မသုံးဘဲ Block သုံးမှ Scroll က ပိုငြိမ်ပါတယ် */
-}
 
 /* --- 1. GRID VIEW --- */
-.grid-layout {
-    display: grid;
-    /* ကော်လံတွေကို သေသပ်စွာ ခွဲမယ် */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-    gap: 25px;
-    /* ★ အရေးကြီးဆုံးအချက်: Card တွေကို အတင်းအောက်ထိ ဆွဲမချအောင် တားမယ် ★ */
-    align-items: start; 
-}
 
 /* Grid Card style */
 .grid-layout .card {
@@ -2204,12 +2158,12 @@ textarea:focus {
     gap: 20px;
     align-items: start;
     width: 100%;
+    align-content: start; /* Items တွေ အပေါ်ကစမယ် */
 }
 
 .grid-layout .card {
     flex-direction: column !important;
     padding: 20px;
-    min-height: 180px; /* Card အမြင့် အနည်းဆုံး ရှိရမယ် */
 }
 
 .grid-layout .card-main-info {
@@ -2284,10 +2238,12 @@ textarea:focus {
 
 /* SCROLL FIX */
 #data-list {
+  width: 100%;
     flex: 1;
-    overflow-y: auto;
-    padding: 20px 20px 150px 20px;
-    width: 100%;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding: 15px 15px 150px 15px;
+    min-height: 0; /* Flex scroll fix */
 }
 
 /* Mobile အတွက် (ဖုန်းမှာတော့ ၁ တိုင်ပဲ ပြမယ်) */
@@ -2295,4 +2251,79 @@ textarea:focus {
     .grid-layout {
         grid-template-columns: 1fr;
     }
+}
+
+@media (max-width: 1024px) { /* 768 အစား 1024 ပြောင်းပါ */
+  .sidebar {
+    width: 100% !important;
+    height: 65px !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex !important;
+    flex-direction: row !important; /* ဘေးတိုက်စီမယ် */
+    align-items: center;
+    padding: 0 10px;
+    z-index: 5000;
+    background: linear-gradient(90deg, #001f16, #463100eb);
+  }
+
+  /* Menu တွေအားလုံး စုနေမယ့်နေရာ */
+  .menu-container {
+    display: flex !important;
+    flex-direction: row !important; /* အပေါ်အောက်မဟုတ်ဘဲ ဘေးတိုက်စီမယ် */
+    flex: 1;
+    overflow-x: auto !important; /* ဘယ်ညာ scroll ဆွဲလို့ရအောင် */
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 0 10px;
+    align-items: center;
+    -webkit-overflow-scrolling: touch; /* iOS မှာ Scroll ချောအောင် */
+  }
+
+  /* Menu တစ်ခုချင်းစီ မကျုံ့သွားအောင် တားမယ် */
+  .menu-item {
+    flex-shrink: 0 !important; /* ဒါက အရေးကြီးဆုံးပါ (မပါရင် menu တွေ မြုပ်ကုန်တတ်ပါတယ်) */
+    padding: 8px 15px !important;
+    white-space: nowrap !important; /* စာသားတွေ အောက်မဆင်းစေရ */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 13px;
+    width: auto !important; /* ပုံေသအကျယ်မပေးဘဲ စာအလိုက် ယူခိုင်းမယ် */
+  }
+
+  .menu-item span {
+    display: inline !important; /* ဖျောက်ထားမိရင် ပြန်ပြမယ် */
+  }
+
+  .brand, .menu-label, .user-details {
+    display: none !important; /* ရှုပ်တဲ့စာတွေကို ဖျောက်မယ် */
+  }
+
+  .main-area {
+    padding-top: 80px !important; /* content တွေ sidebar အောက် မမြုပ်အောင် */
+    /* height: 100dvh; */
+  }
+
+  /* iPad မှာ Logout ခလုတ်ကို ညာဘက်အစွန်မှာ အသေကပ်ထားမယ် */
+  .user-panel {
+    margin-top: 0;
+    background: none;
+    padding: 0;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    padding-left: 10px;
+  }
+
+  .btn-mobile-logout {
+    display: block !important;
+    font-size: 22px; /* ခလုတ်ကို နှိပ်ရလွယ်အောင် ကြီးလိုက်မယ် */
+    padding: 10px;
+  }
+
+  /* iPhone မှာ တစ်တိုင်တည်းပြမယ် (ညာဘက်မမြုပ်အောင်) */
+  @media (max-width: 480px) {
+    .grid-layout {
+      grid-template-columns: 1fr !important;
+    }
+  }
 }
