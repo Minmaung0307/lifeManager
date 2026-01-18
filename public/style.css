@@ -315,12 +315,14 @@ header {
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  /* gap: 20px; */
 
   /* Scroll ပြဿနာရှင်းရန် */
-  overflow-y: auto;
-  padding-bottom: 150px; /* အောက်ဆုံးထိ Scroll ဆွဲလို့ရအောင် နေရာပိုချန်မယ် */
-  max-height: 100%; /* Parent အမြင့်အတိုင်းယူမယ် */
+  /* overflow-y: auto; */
+  /* padding-bottom: 150px;  */
+  /* အောက်ဆုံးထိ Scroll ဆွဲလို့ရအောင် နေရာပိုချန်မယ် */
+  /* max-height: 100%;  */
+  /* Parent အမြင့်အတိုင်းယူမယ် */
   align-content: start; /* Items တွေ အပေါ်ကစမယ် */
 }
 .list-layout {
@@ -1164,6 +1166,18 @@ textarea:focus {
 /* --- ANNOUNCEMENT BANNER Ends --- */
 
 /* --- CARD DESIGN UPDATE --- */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden; /* နောက်ခံအရောင်တွေ လျှံမထွက်အောင် */
+  /* height: 75px; */
+}
 
 .card:hover {
   transform: translateY(-4px);
@@ -1772,6 +1786,7 @@ textarea:focus {
 
 /* --- SHARED CARD BASE --- */
 .card {
+  height: fit-content;
     background: white;
     border-radius: 20px;
     border: 1px solid #e2e8f0;
@@ -1911,6 +1926,371 @@ textarea:focus {
 }
 
 /* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- LAYOUT WRAPPER (Scroll ဆွဲလို့ရအောင် ပြင်ထားသောအပိုင်း) --- */
+#data-list {
+    flex: 1;               /* ကျန်တဲ့ နေရာအလွတ်အကုန်ယူမယ် */
+    overflow-y: auto !important; /* Scroll ပြန်ဖွင့်မယ် */
+    min-height: 0;         /* Flexbox Scroll Fix */
+    padding: 10px 10px 150px 10px; /* အောက်ဆုံးမှာ ပစ္စည်းမမြုပ်အောင် နေရာချန်မယ် */
+}
+
+/* --- GRID VIEW LAYOUT --- */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    align-content: start;
+}
+
+.grid-layout .card {
+    flex-direction: column !important; /* အပေါ်အောက်စီမယ် */
+    padding: 15px;
+    height: auto;
+}
+
+.grid-layout .card-main-info {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.grid-layout .card-icon-box {
+    margin-bottom: 12px;
+}
+
+.grid-layout .card-action-box {
+    width: 100%;
+    display: flex; /* ဒါပါမှ ခလုတ်တွေ ပေါ်မှာပါ */
+    justify-content: flex-end; /* ညာဘက်ကပ်မယ် */
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+/* --- LIST VIEW LAYOUT --- */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list-layout .card {
+    flex-direction: row !important; /* ဘေးတိုက်စီမယ် */
+    padding: 12px 20px;
+    align-items: center;
+    height: 80px;
+}
+
+.list-layout .card-icon-box {
+    margin-right: 18px;
+}
+
+.list-layout .card-main-info {
+    flex-direction: row;
+    align-items: center;
+}
+
+.list-layout .card-action-box {
+    margin-left: auto; /* ညာဘက်အစွန်ကို တွန်းပို့မယ် */
+    display: flex;
+}
+
+/* --- LAYOUT WRAPPER (MAIN SCROLL FIX) --- */
+.main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden; /* Main body မလှုပ်စေရ */
+}
+
+#data-list {
+    flex: 1;
+    overflow-y: auto !important; /* ဒီနေရာမှာပဲ Scroll ဆွဲမယ် */
+    padding: 10px 10px 150px 10px;
+    min-height: 0; /* Flex scroll fix */
+}
+
+/* --- CARD SHARED STYLE --- */
+.card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex;
+    transition: 0.2s;
+    cursor: pointer;
+    overflow: hidden;
+}
+.card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); }
+
+.card-main-info { display: flex; flex: 1; align-items: center; }
+.card-icon-box { flex-shrink: 0; }
+.card-text-box { display: flex; flex-direction: column; overflow: hidden; padding: 0 10px; }
+
+.card-title { font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-subtitle { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-cat-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
+
+.card-action-box { display: flex; align-items: center; gap: 8px; }
+.card-action-box button {
+    background: #f8fafc; border: none; width: 32px; height: 32px;
+    border-radius: 10px; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.card-action-box button:hover { background: #e2e8f0; color: var(--primary); }
+.card-action-box .btn-del:hover { background: #fee2e2; color: #ef4444; }
+
+/* --- 1. GRID VIEW --- */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+.grid-layout .card {
+    flex-direction: column;
+    padding: 15px;
+}
+.grid-layout .card-main-info { flex-direction: column; align-items: flex-start; }
+.grid-layout .card-icon-box { margin-bottom: 12px; }
+.grid-layout .card-action-box {
+    width: 100%;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+    justify-content: flex-end;
+}
+
+/* --- 2. LIST VIEW --- */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.list-layout .card {
+    flex-direction: row;
+    padding: 12px 20px;
+    align-items: center;
+}
+.list-layout .card-icon-box { margin-right: 15px; }
+.list-layout .card-main-info { flex-direction: row; }
+.list-layout .card-action-box { margin-left: auto; }
+
+/* Mobile Sidebar Fix */
+@media (max-width: 768px) {
+    .main-area { padding-top: 75px; } /* Sidebar အမြင့်ထက် ပိုပေးရမယ် */
+    .grid-layout { grid-template-columns: 1fr; }
+}
+
+/* --- LAYOUT WRAPPER (Scroll အောင်မြင်ဖို့ အဓိက အပိုင်း) --- */
+#data-list {
+    flex: 1;
+    overflow-y: auto !important; /* Scroll ရအောင် အတင်းခိုင်းမယ် */
+    min-height: 0; 
+    padding: 10px 10px 180px 10px; /* အောက်ဆုံးမှာ ပစ္စည်းတွေ မကပ်အောင် နေရာအများကြီး ချန်မယ် */
+    display: block; /* Flex မသုံးဘဲ Block သုံးမှ Scroll က ပိုငြိမ်ပါတယ် */
+}
+
+/* --- 1. GRID VIEW --- */
+.grid-layout {
+    display: grid;
+    /* ကော်လံတွေကို သေသပ်စွာ ခွဲမယ် */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+    gap: 25px;
+    /* ★ အရေးကြီးဆုံးအချက်: Card တွေကို အတင်းအောက်ထိ ဆွဲမချအောင် တားမယ် ★ */
+    align-items: start; 
+}
+
+/* Grid Card style */
+.grid-layout .card {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    height: auto; /* အမြင့်ကို Content အလိုက်ပဲ ယူမယ် */
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    transition: 0.2s;
+}
+
+/* Card ထဲက စာသားနဲ့ ပုံ အပိုင်း */
+.grid-layout .card-main-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.grid-layout .card-icon-box {
+    margin-bottom: 15px;
+}
+
+.grid-layout .card-text-box {
+    padding: 0;
+}
+
+/* Actions Box (ခလုတ်တွေ) */
+.grid-layout .card-action-box {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: auto; /* အပေါ်က အပိုင်းနဲ့ အကွာအဝေးကို ထိန်းမယ် */
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* --- 2. LIST VIEW --- */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.list-layout .card {
+    flex-direction: row !important;
+    padding: 15px 20px;
+    align-items: center;
+    height: 90px;
+}
+
+.list-layout .card-main-info {
+    flex-direction: row;
+    align-items: center;
+}
+
+.list-layout .card-icon-box {
+    margin-right: 20px;
+}
+
+.list-layout .card-action-box {
+    margin-left: auto;
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .main-area {
+        padding-top: 80px; /* Sidebar အမြင့်ထက် ပိုထားပါ */
+    }
+    .grid-layout {
+        grid-template-columns: 1fr; /* ဖုန်းမှာ တစ်တိုင်တည်းပြမယ် */
+    }
+}
+
+/* --- SHARED CARD BASE (Grid ရော List ရောအတွက် အခြေခံ) --- */
+.card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    display: flex;
+    transition: 0.2s;
+    cursor: pointer;
+    overflow: visible !important; /* ခလုတ်တွေ မမြုပ်အောင် visible ထားမယ် */
+}
+
+/* --- GRID VIEW LAYOUT --- */
+.grid-layout {
+    display: grid !important;
+    /* Column အကျယ်ကို ၂၅၀ ပဲထားမယ်၊ ဒါမှ နေရာလွတ်ရင် ၃ ခု၊ ၄ ခု စီသွားမှာပါ */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    align-items: start;
+    width: 100%;
+}
+
+.grid-layout .card {
+    flex-direction: column !important;
+    padding: 20px;
+    min-height: 180px; /* Card အမြင့် အနည်းဆုံး ရှိရမယ် */
+}
+
+.grid-layout .card-main-info {
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1; /* စာသားတွေကို အပေါ်မှာ နေရာယူခိုင်းမယ် */
+}
+
+.grid-layout .card-icon-box {
+    margin-bottom: 15px;
+}
+
+.grid-layout .card-action-box {
+    display: flex !important; /* အတင်းပြခိုင်းမယ် */
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 15px; /* စာသားနဲ့ ခလုတ်ကြား အကွာအဝေး */
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9; /* မျဉ်းလေး တားမယ် */
+    width: 100%;
+}
+
+/* --- LIST VIEW LAYOUT --- */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list-layout .card {
+    flex-direction: row !important;
+    padding: 12px 20px;
+    align-items: center;
+    height: 85px;
+}
+
+.list-layout .card-action-box {
+    margin-left: auto;
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* --- BUTTON STYLES (ခလုတ်တွေ လှအောင်) --- */
+.card-action-box button {
+    background: #f8fafc;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.card-action-box button:hover {
+    background: #e2e8f0;
+    color: var(--primary);
+}
+
+.btn-star.active {
+    color: #f59e0b !important;
+}
+
+.btn-del:hover {
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+}
+
+/* SCROLL FIX */
+#data-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 150px 20px;
+    width: 100%;
+}
+
+/* Mobile အတွက် (ဖုန်းမှာတော့ ၁ တိုင်ပဲ ပြမယ်) */
 @media (max-width: 768px) {
     .grid-layout {
         grid-template-columns: 1fr;
