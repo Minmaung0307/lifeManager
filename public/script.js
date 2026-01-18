@@ -289,18 +289,32 @@ function importData(input) {
 
 // --- 5. UI LOGIC (View, Fav, Icons) ---
 
+// function toggleView(view) {
+//     currentView = view;
+//     document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+//     document.getElementById('btn-' + view).classList.add('active');
+//     const listDiv = document.getElementById('data-list');
+//     if(view === 'list') {
+//         listDiv.classList.remove('grid-layout');
+//         listDiv.classList.add('list-layout');
+//     } else {
+//         listDiv.classList.remove('list-layout');
+//         listDiv.classList.add('grid-layout');
+//     }
+// }
+
 function toggleView(view) {
     currentView = view;
+    
+    // ခလုတ်တွေရဲ့ Active အရောင်ကို အရင်ဖြုတ်မယ်
     document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-' + view).classList.add('active');
-    const listDiv = document.getElementById('data-list');
-    if(view === 'list') {
-        listDiv.classList.remove('grid-layout');
-        listDiv.classList.add('list-layout');
-    } else {
-        listDiv.classList.remove('list-layout');
-        listDiv.classList.add('grid-layout');
-    }
+    
+    // နှိပ်လိုက်တဲ့ ခလုတ်ကို Active အရောင်ပေးမယ်
+    const activeBtn = document.getElementById('btn-' + view);
+    if(activeBtn) activeBtn.classList.add('active');
+
+    // ★ အရေးကြီးဆုံးအချက် - renderList ကို ပြန်ခေါ်မှ Template အသစ်ကို ဆွဲပေးမှာပါ
+    renderList();
 }
 
 function toggleFav(id) {
@@ -315,6 +329,9 @@ function toggleFav(id) {
 function renderList() {
     const listDiv = document.getElementById('data-list');
     const search = document.getElementById('search-input').value.toLowerCase();
+    
+    // Class အဟောင်းတွေကို အကုန်ဖြုတ်မယ်
+    listDiv.className = ''; 
     listDiv.innerHTML = '';
 
     let items = vaultItems.filter(i => {
@@ -329,7 +346,6 @@ function renderList() {
         return;
     }
 
-    // ★ STYLE MAP with LABELS ★
     const styleMap = {
         social:   { label: 'Social Media', icon: 'fa-globe',       bg: '#EFF6FF', text: '#3B82F6' },
         bank:     { label: 'Finance',      icon: 'fa-wallet',      bg: '#ECFDF5', text: '#10B981' },
@@ -342,45 +358,89 @@ function renderList() {
         other:    { label: 'Other',        icon: 'fa-box-open',    bg: '#F3F4F6', text: '#4B5563' }
     };
 
-    items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.onclick = () => viewItemDetail(item.id); 
-
-        const starClass = item.isFav ? 'fas text-yellow active' : 'far';
-        const style = styleMap[item.category] || styleMap['other'];
-
-        div.innerHTML = `
-            <div class="card-header">
-                <!-- ★ ICON + LABEL GROUP ★ -->
-                <div class="cat-group">
-                    <div class="cat-icon-large" style="background: ${style.bg}; color: ${style.text};">
-                        <i class="fas ${style.icon}"></i>
-                    </div>
-                    <!-- ဘေးနားက စာသား -->
-                    <span class="cat-title-label" style="color:${style.text}">${style.label}</span>
-                </div>
-
-                <div class="card-actions">
-                    <button onclick="event.stopPropagation(); toggleFav('${item.id}')" class="btn-star ${item.isFav ? 'active' : ''}">
-                        <i class="${starClass} fa-star"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); editItem('${item.id}')">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="btn-del">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="card-content">
-                <div class="card-title">${item.title}</div>
-                <div class="card-user">${item.username || 'No Username'}</div>
-            </div>
+    // --- TABLE VIEW (EXCEL STYLE) ---
+    if (currentView === 'table') {
+        listDiv.classList.add('table-layout');
+        let tableHTML = `
+            <div class="excel-container">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Account Title</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th style="width:100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
-        listDiv.appendChild(div);
-    });
+
+        items.forEach(item => {
+            const style = styleMap[item.category] || styleMap['other'];
+            tableHTML += `
+                <tr onclick="viewItemDetail('${item.id}')">
+                    <td>
+                        <span class="table-cat-badge" style="background:${style.bg}; color:${style.text}">
+                            <i class="fas ${style.icon}"></i> ${style.label}
+                        </span>
+                    </td>
+                    <td style="font-weight:600;">${item.title}</td>
+                    <td>${item.username || '-'}</td>
+                    <td style="font-family:monospace; color:#cbd5e1;">••••••••</td>
+                    <td>
+                        <div class="table-actions">
+                            <button onclick="event.stopPropagation(); editItem('${item.id}')"><i class="fas fa-pen"></i></button>
+                            <button onclick="event.stopPropagation(); deleteItem('${item.id}')" style="color:#ef4444;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        tableHTML += `</tbody></table></div>`;
+        listDiv.innerHTML = tableHTML;
+
+    } else {
+        // --- GRID & LIST VIEW (အရင်အတိုင်း) ---
+        if(currentView === 'list') listDiv.classList.add('list-layout'); 
+        else listDiv.classList.add('grid-layout');
+
+        items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.onclick = () => viewItemDetail(item.id); 
+    const style = styleMap[item.category] || styleMap['other'];
+    const starClass = item.isFav ? 'fas text-yellow active' : 'far';
+
+    div.innerHTML = `
+        <div class="card-main-info">
+            <div class="card-icon-box">
+                <div class="cat-icon-large" style="background: ${style.bg}; color: ${style.text};">
+                    <i class="fas ${style.icon}"></i>
+                </div>
+            </div>
+            <div class="card-text-box">
+                <div class="card-title">${item.title}</div>
+                <div class="card-subtitle">${item.username || 'No Username'}</div>
+                <div class="card-cat-tag" style="color:${style.text}">${style.label}</div>
+            </div>
+        </div>
+        
+        <div class="card-action-box">
+            <button onclick="event.stopPropagation(); toggleFav('${item.id}')" class="btn-star ${item.isFav ? 'active' : ''}">
+                <i class="${starClass} fa-star"></i>
+            </button>
+            <button onclick="event.stopPropagation(); editItem('${item.id}')">
+                <i class="fas fa-pen"></i>
+            </button>
+            <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="btn-del">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    listDiv.appendChild(div);
+});
+    }
 }
 
 // --- NEW FUNCTION: VIEW DETAILS ---

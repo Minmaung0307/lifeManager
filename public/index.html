@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -70,7 +70,7 @@
             autocomplete="new-password"
             name="vault_unlock_key_unique"
             readonly
-            onfocus="this.removeAttribute('readonly');"
+            onfocus="this.removeAttribute('readonly')"
           />
         </div>
 
@@ -185,7 +185,10 @@
               id="user-avatar"
               src=""
               alt="User"
-              onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"
+              onerror="
+                this.src =
+                  'https://cdn-icons-png.flaticon.com/512/149/149071.png'
+              "
             />
 
             <div class="user-details">
@@ -252,6 +255,15 @@
                 onclick="toggleView('list')"
               >
                 <i class="fas fa-list"></i>
+              </button>
+
+              <button
+                class="btn-toggle"
+                id="btn-table"
+                onclick="toggleView('table')"
+                title="Excel View"
+              >
+                <i class="fas fa-table"></i>
               </button>
             </div>
             <button onclick="openModal('add')" class="btn-primary">

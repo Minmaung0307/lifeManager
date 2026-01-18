@@ -143,7 +143,7 @@ body {
 }
 .menu-item:hover,
 .menu-item.active {
-    margin-top: 10px;
+  margin-top: 10px;
   background: var(--primary);
   color: white;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
@@ -831,89 +831,102 @@ textarea:focus {
     font-size: 20px;
   }
 
-  .list-layout { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 10px; 
-        padding-bottom: 90px; 
-    }
-    
-    .list-layout .card {
-        display: flex;
-        flex-direction: row; /* ဘေးတိုက်စီမယ် */
-        align-items: center; /* ဒေါင်လိုက် အလယ်တည့်တည့် (Vertical Center) */
-        padding: 10px 15px;
-        border-radius: 14px;
-        min-height: 60px; /* အနည်းဆုံး အမြင့် */
-        position: relative; /* ခလုတ်တွေကို နေရာချဖို့ Reference */
-        gap: 0; /* Gap ကို ဖယ်လိုက်မယ် (Margin နဲ့ ထိန်းမယ်) */
-    }
-    
-    /* 1. Icon Section */
-    .list-layout .card-header {
-        margin-bottom: 0;
-        width: auto;
-        display: block; /* Flex ဖြုတ်မယ် */
-    }
-    
-    .list-layout .cat-group {
-        display: block;
-        width: auto;
-        margin-right: 12px; /* Icon နဲ့ စာ ကြားကွာဟချက် */
-    }
+  .list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 90px;
+  }
 
-    .list-layout .cat-icon-large {
-        width: 40px; 
-        height: 40px; 
-        font-size: 18px; 
-        border-radius: 10px;
-    }
-    
-    /* Mobile List မှာ Category Name ရှုပ်လို့ ဖျောက်ထားမယ် (Icon အရောင်နဲ့ သိသာလို့) */
-    .list-layout .cat-title-label {
-        display: none; 
-    }
-    
-    /* 2. Content Section (Title) */
-    .list-layout .card-content {
-        flex: 1; /* ကျန်တဲ့နေရာ အကုန်ယူ */
-        min-width: 0; /* စာရှည်ရင် ... ဖြစ်အောင် */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-right: 90px; /* ★ ခလုတ်တွေနဲ့ မထပ်အောင် ညာဘက်နေရာချန်မယ် ★ */
-    }
+  .list-layout .card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important; /* ဒေါင်လိုက် အလယ်တည့်တည့် ပို့ပေးတာ ဒါပါ */
+    /* padding: 10px 15px; */
+    border-radius: 14px;
+    /* min-height: 60px;  */
+    /* အနည်းဆုံး အမြင့် */
+    position: relative; /* ခလုတ်တွေကို နေရာချဖို့ Reference */
+    height: 80px !important; /* Card အမြင့်ကို ပုံေသထားမယ် */
+    padding: 0 20px !important; /* ဘေးဘောင် Padding */
+    gap: 15px;
+  }
 
-    .list-layout .card-title { 
-        font-size: 14px; 
-        margin-bottom: 2px; 
-        line-height: 1.3;
-    }
-    .list-layout .card-user { 
-        font-size: 11px; 
-        margin: 0; 
-    }
-    
-    /* 3. Actions Buttons (ညာဘက် အသေကပ်) */
-    .list-layout .card-actions {
-        position: absolute; /* Card ပေါ်မှာ ပျံနေမယ် */
-        right: 10px;
-        top: 50%; /* အပေါ်အောက် အလယ် */
-        transform: translateY(-50%); /* အလယ်တည့်တည့်ညှိ */
-        
-        display: flex;
-        gap: 5px;
-        background: rgba(255,255,255,0.9); /* စာတွေနဲ့ထပ်ရင် နောက်ခံကာမယ် */
-        padding-left: 5px;
-    }
-    
-    .list-layout .card-actions button {
-        width: 30px; 
-        height: 30px; 
-        font-size: 13px;
-        border-radius: 8px;
-        background: #F1F5F9;
-    }
+  /* 1. Icon Section */
+  .list-layout .card-header {
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    width: auto;
+    display: flex; /* Flex ဖြုတ်မယ် */
+    align-items: center;
+  }
+
+  .list-layout .cat-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: auto;
+    margin-right: 12px; /* Icon နဲ့ စာ ကြားကွာဟချက် */
+  }
+
+  .list-layout .cat-icon-large {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  /* Mobile List မှာ Category Name ရှုပ်လို့ ဖျောက်ထားမယ် (Icon အရောင်နဲ့ သိသာလို့) */
+  .list-layout .cat-title-label {
+    display: none;
+  }
+
+  /* 2. Content Section (Title) */
+  .list-layout .card-content {
+    margin-top: 0 !important;
+    flex: 1; /* ကျန်တဲ့နေရာ အကုန်ယူ */
+    min-width: 0; /* စာရှည်ရင် ... ဖြစ်အောင် */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: 90px; /* ★ ခလုတ်တွေနဲ့ မထပ်အောင် ညာဘက်နေရာချန်မယ် ★ */
+  }
+
+  .list-layout .card-title {
+    font-size: 14px !important;
+    margin: 0 !important;
+    /* margin-bottom: 2px; */
+    padding: 0 !important;
+    line-height: 1.3;
+  }
+  .list-layout .card-user {
+    font-size: 11px !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  /* 3. Actions Buttons (ညာဘက် အသေကပ်) */
+  .list-layout .card-actions {
+    position: absolute; /* Card ပေါ်မှာ ပျံနေမယ် */
+    right: 10px;
+    top: 50%; /* အပေါ်အောက် အလယ် */
+    transform: translateY(-50%); /* အလယ်တည့်တည့်ညှိ */
+
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.9); /* စာတွေနဲ့ထပ်ရင် နောက်ခံကာမယ် */
+    padding-left: 5px;
+  }
+
+  .list-layout .card-actions button {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+    border-radius: 8px;
+    background: #f1f5f9;
+  }
 }
 
 .btn-mobile-logout {
@@ -1151,18 +1164,6 @@ textarea:focus {
 /* --- ANNOUNCEMENT BANNER Ends --- */
 
 /* --- CARD DESIGN UPDATE --- */
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 20px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  position: relative;
-  cursor: pointer;
-  overflow: hidden; /* နောက်ခံအရောင်တွေ လျှံမထွက်အောင် */
-  height: 75px;
-}
 
 .card:hover {
   transform: translateY(-4px);
@@ -1272,7 +1273,7 @@ textarea:focus {
   font-size: 22px;
 } /* List မှာ နည်းနည်းပြန်သေးမယ် */
 .list-layout .card-content {
-    height: 45px;
+  height: 45px;
   flex: 1;
   margin: 0;
   min-width: 0;
@@ -1573,4 +1574,345 @@ textarea:focus {
 .blur-text.revealed {
   filter: none;
   user-select: text;
+}
+
+/* --- EXCEL TABLE STYLE --- */
+.table-layout {
+  width: 100%;
+  overflow-x: auto; /* ဖုန်းမှာဆို ဘေးတိုက်ရွှေ့လို့ရအောင် */
+}
+
+.excel-container {
+  background: white;
+  border-radius: 15px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+  min-width: 600px; /* Table ပုံစံ ပျက်မသွားအောင် */
+}
+
+.excel-table th {
+  background: #f8fafc;
+  padding: 15px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.excel-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--text);
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.excel-table tr:hover {
+  background-color: #f1f5f9;
+  cursor: pointer;
+}
+
+.table-cat-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-pass {
+  font-family: monospace;
+  letter-spacing: 2px;
+  color: #cbd5e1;
+}
+
+.fw-bold {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.table-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.table-actions button {
+  border: none;
+  background: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #64748b;
+  transition: 0.2s;
+}
+
+.table-actions button:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.text-red:hover {
+  background: #ef4444 !important;
+}
+
+/* Mobile အတွက် */
+@media (max-width: 768px) {
+  .excel-table th:nth-child(3),
+  .excel-table td:nth-child(3),
+  .excel-table th:nth-child(4),
+  .excel-table td:nth-child(4) {
+    display: none; /* ဖုန်းမှာ နေရာမလောက်ရင် Username/Pass ဖျောက်ထားမယ် */
+  }
+}
+
+/* --- IMPROVED LIST VIEW --- */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 100px;
+    width: 100%;
+}
+
+.list-layout .card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    background: white;
+    padding: 12px 18px !important;
+    border-radius: 16px;
+    height: auto !important; /* စာသားအလိုက် အမြင့်ပြောင်းနိုင်အောင် */
+    min-height: 70px;
+    border: 1px solid #f1f5f9;
+    transition: 0.2s;
+    gap: 15px;
+}
+
+.list-layout .card-left {
+    flex-shrink: 0;
+}
+
+.list-layout .cat-icon-large {
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 18px !important;
+    border-radius: 12px !important;
+}
+
+.list-layout .card-content {
+    flex: 1; /* ကျန်တဲ့နေရာ အကုန်ယူမယ် */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 !important;
+}
+
+.list-layout .card-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1e293b;
+    margin-bottom: 2px !important;
+    padding: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-layout .card-subtitle {
+    font-size: 12px !important;
+    color: #64748b;
+    margin: 0 !important;
+}
+
+.list-layout .card-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.list-layout .card-actions button {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.list-layout .card-actions button:hover {
+    background: #e2e8f0;
+    color: var(--primary);
+}
+
+.list-layout .btn-del:hover {
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+}
+
+/* --- SHARED CARD BASE --- */
+.card {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
+
+.card-main-info {
+    display: flex;
+    flex: 1;
+    align-items: center;
+}
+
+.card-text-box {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.card-title {
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-cat-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.card-action-box {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-action-box button {
+    background: #f8fafc;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.card-action-box button:hover {
+    background: #e2e8f0;
+    color: var(--primary);
+}
+
+.card-action-box .btn-del:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* --- 1. GRID VIEW LAYOUT --- */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.grid-layout .card {
+    flex-direction: column; /* အပေါ်အောက်စီမယ် */
+    padding: 10px 15px;
+}
+
+.grid-layout .card-main-info {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.grid-layout .card-icon-box {
+    margin-bottom: 15px;
+}
+
+.grid-layout .card-title {
+    font-size: 16px;
+}
+
+.grid-layout .card-action-box {
+    justify-content: flex-end; /* ခလုတ်တွေကို ညာဘက်ပို့မယ် */
+    border-top: 1px solid #f1f5f9;
+    padding-top: 2px;
+}
+
+/* --- 2. LIST VIEW LAYOUT --- */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list-layout .card {
+    flex-direction: row; /* ဘေးတိုက်စီမယ် */
+    padding: 12px 20px;
+    align-items: center;
+}
+
+.list-layout .card-icon-box {
+    margin-right: 18px;
+}
+
+.list-layout .card-main-info {
+    flex-direction: row;
+}
+
+.list-layout .card-title {
+    font-size: 15px;
+}
+
+.list-layout .card-cat-tag {
+    display: inline-block; /* List မှာ Category ကို ဘေးမှာပြမယ်ဆိုရင် */
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .grid-layout {
+        grid-template-columns: 1fr;
+    }
 }
