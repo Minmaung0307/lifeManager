@@ -2327,3 +2327,15 @@ textarea:focus {
     }
   }
 }
+/* Category feedback and accessible logout action */
+.menu-count { margin-left: auto; font-size: 12px; border-radius: 12px; padding: 2px 8px; background: rgba(148,163,184,.16); }
+.section-summary { display:flex; align-items:center; gap:16px; margin:20px 0; flex-wrap:wrap; }
+.section-summary h2 { margin:0; font-size:20px; }
+.section-summary span { color:#64748b; font-size:14px; }
+.empty-state { width:100%; text-align:center; padding:48px 16px; color:#64748b; }
+.empty-state > i { font-size:36px; color:#94a3b8; }
+.empty-state h3 { color:#334155; }
+.empty-state .btn-primary { margin:20px auto 0; }
+.logout-icon { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; }
+.logout-icon:focus-visible, .menu-item:focus-visible { outline:3px solid #a5b4fc; outline-offset:3px; }
+@media(max-width:768px) { .user-details .logout-icon { display:none; } }

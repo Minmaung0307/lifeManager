@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudKeeper</title>
+    <title>LifeManager</title>
 
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json" />
@@ -34,7 +34,7 @@
     <div id="login-view" class="view active">
       <div class="login-card">
         <div class="logo-circle"><i class="fas fa-shield-alt"></i></div>
-        <h1>CloudKeeper</h1>
+        <h1>LifeManager</h1>
         <p>Your Secure Vault on Google Drive</p>
         <button onclick="handleAuthClick()" class="btn-google">
           <img
@@ -98,7 +98,7 @@
       <!-- Sidebar -->
       <aside class="sidebar">
         <div class="brand">
-          <i class="fas fa-shield-alt"></i> <span>Keeper</span>
+          <i class="fas fa-shield-alt"></i> <span>LifeManager</span>
         </div>
 
         <div
@@ -111,41 +111,41 @@
 
         <!-- Menu Container (User Panel is now INSIDE for mobile scroll) -->
         <div class="menu-container">
-          <button class="menu-item active" onclick="filterData('all')">
+          <button class="menu-item active" data-category="all" onclick="filterData('all', this)">
             <i class="fas fa-border-all"></i> <span>All Items</span>
-          </button>
-          <button class="menu-item" onclick="filterData('fav')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="fav" onclick="filterData('fav', this)">
             <i class="fas fa-star text-yellow"></i> <span>Favorites</span>
-          </button>
+          <span class="menu-count">0</span></button>
 
           <div class="menu-label">Categories</div>
-          <button class="menu-item" onclick="filterData('social')">
+          <button class="menu-item" data-category="social" onclick="filterData('social', this)">
             <i class="fas fa-globe"></i> <span>Social</span>
-          </button>
-          <button class="menu-item" onclick="filterData('bank')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="bank" onclick="filterData('bank', this)">
             <i class="fas fa-wallet"></i> <span>Finance</span>
-          </button>
-          <button class="menu-item" onclick="filterData('wireless')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="wireless" onclick="filterData('wireless', this)">
             <i class="fas fa-wifi"></i> <span>Wireless</span>
-          </button>
-          <button class="menu-item" onclick="filterData('tv')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="tv" onclick="filterData('tv', this)">
             <i class="fas fa-tv"></i> <span>TV & Ent.</span>
-          </button>
-          <button class="menu-item" onclick="filterData('auto')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="auto" onclick="filterData('auto', this)">
             <i class="fas fa-car"></i> <span>Auto</span>
-          </button>
-          <button class="menu-item" onclick="filterData('insurance')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="insurance" onclick="filterData('insurance', this)">
             <i class="fas fa-file-contract"></i> <span>Insurance</span>
-          </button>
-          <button class="menu-item" onclick="filterData('home')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="home" onclick="filterData('home', this)">
             <i class="fas fa-home"></i> <span>Home</span>
-          </button>
-          <button class="menu-item" onclick="filterData('work')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="work" onclick="filterData('work', this)">
             <i class="fas fa-briefcase"></i> <span>Work</span>
-          </button>
-          <button class="menu-item" onclick="filterData('other')">
+          <span class="menu-count">0</span></button>
+          <button class="menu-item" data-category="other" onclick="filterData('other', this)">
             <i class="fas fa-box-open"></i> <span>Other</span>
-          </button>
+          <span class="menu-count">0</span></button>
 
           <div class="menu-label">Data Management</div>
           <!-- ★ NEW: Backup & Restore ★ -->
@@ -168,16 +168,16 @@
           />
 
           <!-- Help Button -->
-          <button class="menu-item" onclick="openGuide()">
+          <!-- <button class="menu-item" onclick="openGuide()">
             <i class="fas fa-question-circle"></i> <span>Guide & Privacy</span>
-          </button>
+          </button> -->
 
           <div class="menu-label">Settings</div>
           <!-- ခေါင်းစဉ်လေးခံလိုက်ရင် ပိုလှပါတယ် -->
 
-          <button class="menu-item" onclick="openChangePassModal()">
+          <!-- <button class="menu-item" onclick="openChangePassModal()">
             <i class="fas fa-key"></i> <span>Change Password</span>
-          </button>
+          </button> -->
 
           <!-- User Panel (Moved Inside) -->
           <div class="user-panel">
@@ -193,8 +193,8 @@
 
             <div class="user-details">
               <span id="user-name">User</span>
-              <button onclick="handleSignoutClick()" class="btn-sm">
-                Logout
+              <button onclick="handleSignoutClick()" class="btn-sm logout-icon" title="Logout" aria-label="Logout">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
               </button>
             </div>
 
@@ -272,6 +272,7 @@
           </div>
         </header>
 
+        <div class="section-summary"><h2 id="section-title">All Accounts</h2><span id="section-count" aria-live="polite"></span></div>
         <div id="sync-status" class="status-bar hidden">
           <i class="fas fa-sync fa-spin"></i> Syncing with Google Drive...
         </div>
@@ -425,7 +426,7 @@
     </div>
 
     <!-- PROFESSIONAL GUIDE MODAL -->
-    <div id="guide-modal" class="modal">
+    <!-- <div id="guide-modal" class="modal">
       <div class="modal-content modal-large">
         <div class="modal-header no-border">
           <div class="tab-header">
@@ -440,10 +441,10 @@
         </div>
 
         <div class="modal-body scroll-body legal-body">
-          <!-- TAB 1: USER MANUAL -->
+          <!-- TAB 1: USER MANUAL --
           <div id="tab-manual" class="tab-content active">
             <div class="doc-header">
-              <h4>CloudKeeper User Manual</h4>
+              <h4>LifeManager User Manual</h4>
               <p>Version 1.0.0</p>
             </div>
 
@@ -459,7 +460,7 @@
             <div class="doc-section">
               <h5>2. System Architecture</h5>
               <p>
-                CloudKeeper operates on a
+                LifeManager operates on a
                 <strong>Serverless Architecture</strong>. Your Google Drive™
                 acts as the sole storage facility for your encrypted vault.
               </p>
@@ -487,7 +488,7 @@
             </div>
           </div>
 
-          <!-- TAB 2: PRIVACY POLICY -->
+          <!-- TAB 2: PRIVACY POLICY --
           <div id="tab-policy" class="tab-content">
             <div class="doc-header">
               <h4>Privacy Policy</h4>
@@ -497,7 +498,7 @@
             <div class="doc-section">
               <h5>1. Introduction</h5>
               <p>
-                CloudKeeper is a standalone, client-side application. We
+                LifeManager is a standalone, client-side application. We
                 prioritize your privacy and data sovereignty.
               </p>
             </div>
@@ -534,13 +535,13 @@
               <p>Contact: your-email@example.com</p>
             </div>
           </div>
-          <!-- End of Tab 2 -->
+          <!-- End of Tab 2 --
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- CHANGE PASSWORD MODAL -->
-    <div id="change-pass-modal" class="modal">
+    <!-- <div id="change-pass-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
           <h3><i class="fas fa-user-lock"></i> Change Master Password</h3>
@@ -567,7 +568,7 @@
             all your data forever.
           </div>
 
-          <!-- Current Password -->
+          <!-- Current Password --
           <div class="input-group">
             <label>Current Password</label>
             <div class="pass-box">
@@ -582,7 +583,7 @@
             </div>
           </div>
 
-          <!-- New Password -->
+          <!-- New Password --
           <div class="input-group">
             <label>New Password</label>
             <div class="pass-box">
@@ -600,7 +601,7 @@
             </div>
           </div>
 
-          <!-- Confirm New Password -->
+          <!-- Confirm New Password --
           <div class="input-group">
             <label>Confirm New Password</label>
             <div class="pass-box">
@@ -626,7 +627,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <script
       async

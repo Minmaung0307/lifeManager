@@ -1,0 +1,11 @@
+LifeManager UI update
+
+Deploy the public folder with the existing Firebase project:
+  firebase deploy --only hosting
+Then refresh the browser (Cmd+Shift+R on Mac).
+
+Changes: category counts and headings; clear empty states; reliable menu selection; icon logout; Add New resets fields and selects the current category; edit mode preserved; sync status clears on success; account text escaped before HTML display; cryptographic random password generation; fresh service worker assets.
+
+Existing Google OAuth configuration and Drive data format are preserved. No live user data was changed. This update has not been deployed.
+
+Validation: JavaScript syntax and mocked UI tests for filtering, counts, empty/search states, add/edit behavior, safe HTML display and password generation. Live Google login and Drive writes require verification after deployment.

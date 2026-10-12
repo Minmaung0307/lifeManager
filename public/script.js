@@ -25,7 +25,7 @@ let gisInited = false;
 let driveFileId = null;
 let vaultItems = [];
 let encryptedString = ""; // Raw Data from Drive
-let MASTER_KEY = null; // Key in RAM only
+// let MASTER_KEY = null; // Key in RAM only
 let isNewUser = false;
 let currentFilter = "all";
 let currentView = "grid";
@@ -144,36 +144,70 @@ async function initDriveData() {
 }
 
 // --- 5. UNLOCK / DECRYPT ---
+const MASTER_KEY = "master"; // ဒီ Key က Password အစား အမြဲတမ်း သုံးသွားမှာပါ
 async function unlockVault() {
-  const pass = document.getElementById("master-password").value;
-  if (!pass) return alert("Password is required");
+  // Password တောင်းတဲ့ နေရာကို ဖယ်လိုက်ပြီး ပုံသေ MASTER_KEY ကို သုံးမယ်
+  const pass = MASTER_KEY; 
 
   if (isNewUser) {
-    // User အသစ်ဆိုရင် ဒါကို Master Key အဖြစ်သတ်မှတ်ပြီး File အသစ်ဆောက်မယ်
-    MASTER_KEY = pass;
+    // User အသစ်ဆိုရင် File အသစ်တန်းဆောက်မယ်
     vaultItems = [];
-    await createDriveFile(); // Create empty encrypted file
+    await createDriveFile(); 
     enterApp();
   } else {
-    // User ဟောင်းဆိုရင် Decrypt စမ်းမယ်
     try {
       if (!encryptedString) {
-        vaultItems = []; // Empty file case
+        vaultItems = [];
       } else {
+        // ပုံသေ Key နဲ့ Decrypt လုပ်မယ်
         const bytes = CryptoJS.AES.decrypt(encryptedString, pass);
         const originalText = bytes.toString(CryptoJS.enc.Utf8);
-        if (!originalText) throw new Error("Wrong Password");
+        
+        if (!originalText) {
+          // အကယ်၍ အရင်က Master Password အဟောင်းနဲ့ သိမ်းခဲ့တာဆိုရင် Decrypt လုပ်လို့မရဖြစ်မယ်
+          // အဲ့ဒီအခါကျမှ Password တောင်းတာမျိုး လုပ်ချင်လုပ်နိုင်ပါတယ်
+          throw new Error("Cannot decrypt data with default key");
+        }
         vaultItems = JSON.parse(originalText);
       }
-      // Success
-      MASTER_KEY = pass;
       enterApp();
     } catch (e) {
-      alert("Incorrect Password!");
-      document.getElementById("master-password").value = "";
+      console.error(e);
+      alert("Error: ဒေတာတွေကို ဖတ်လို့မရပါဘူး။ Password အဟောင်း ရှိနေလို့ ဖြစ်နိုင်ပါတယ်။");
+      // အကယ်၍ အရင် data တွေ မလိုတော့ရင် createDriveFile() ပြန်ခေါ်ပြီး reset လုပ်လို့ရပါတယ်
     }
   }
 }
+// async function unlockVault() {
+//   const pass = document.getElementById("master-password").value;
+//   if (!pass) return alert("Password is required");
+
+//   if (isNewUser) {
+//     // User အသစ်ဆိုရင် ဒါကို Master Key အဖြစ်သတ်မှတ်ပြီး File အသစ်ဆောက်မယ်
+//     MASTER_KEY = pass;
+//     vaultItems = [];
+//     await createDriveFile(); // Create empty encrypted file
+//     enterApp();
+//   } else {
+//     // User ဟောင်းဆိုရင် Decrypt စမ်းမယ်
+//     try {
+//       if (!encryptedString) {
+//         vaultItems = []; // Empty file case
+//       } else {
+//         const bytes = CryptoJS.AES.decrypt(encryptedString, pass);
+//         const originalText = bytes.toString(CryptoJS.enc.Utf8);
+//         if (!originalText) throw new Error("Wrong Password");
+//         vaultItems = JSON.parse(originalText);
+//       }
+//       // Success
+//       MASTER_KEY = pass;
+//       enterApp();
+//     } catch (e) {
+//       alert("Incorrect Password!");
+//       document.getElementById("master-password").value = "";
+//     }
+//   }
+// }
 
 function enterApp() {
   document.getElementById("unlock-view").style.display = "none";
@@ -204,6 +238,7 @@ async function createDriveFile() {
       body: form,
     },
   );
+  if (!res.ok) throw new Error("Could not create Drive file: " + res.status);
   const val = await res.json();
   driveFileId = val.id;
   vaultItems = [];
@@ -237,7 +272,8 @@ async function saveToDrive() {
     );
 
     if (!res.ok) throw new Error("Network Response: " + res.status);
-    console.log("Saved.");
+    showSyncStatus(false);
+    return true;
   } catch (e) {
     // ★ Failed to Fetch Error Handling ★
     console.error("Save Error:", e);
@@ -245,7 +281,7 @@ async function saveToDrive() {
     // Data ကို Memory ထဲမှာ ဆက်ထားပြီး User ကို သတိပေးမယ်
     // Refresh မလုပ်ခိုင်းပါဘူး (Refresh လုပ်ရင် Data ပျောက်သွားမှာစိုးလို့)
     const statusEl = document.getElementById("sync-status");
-    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Save Failed (Offline). Data stored locally until refresh.`;
+    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Save failed. Changes are only in this tab. Retry or download a backup before refreshing.`;
     statusEl.style.backgroundColor = "#FEF2F2";
     statusEl.style.color = "#DC2626";
     statusEl.classList.remove("hidden");
@@ -262,7 +298,12 @@ async function saveToDrive() {
 
 function showSyncStatus(show) {
   const el = document.getElementById("sync-status");
-  if (show) el.classList.remove("hidden");
+  if (show) {
+    el.textContent = "Syncing with Google Drive…";
+    el.style.backgroundColor = "";
+    el.style.color = "";
+    el.classList.remove("hidden");
+  }
   else el.classList.add("hidden");
 }
 
@@ -357,6 +398,10 @@ function toggleFav(id) {
   }
 }
 
+const categoryLabels = {all: "All Accounts", fav: "Favorites", social: "Social", bank: "Finance", wireless: "Wireless", tv: "TV & Entertainment", auto: "Auto", insurance: "Insurance", home: "Home", work: "Work", other: "Other"};
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+}
 function renderList() {
   const listDiv = document.getElementById("data-list");
   const search = document.getElementById("search-input").value.toLowerCase();
@@ -366,15 +411,21 @@ function renderList() {
   listDiv.className = "";
 
   let items = vaultItems.filter((i) => {
-    const matchesSearch = i.title.toLowerCase().includes(search);
+    const matchesSearch = [i.title, i.username, i.note].some(value => String(value || "").toLowerCase().includes(search));
     if (currentFilter === "all") return matchesSearch;
     if (currentFilter === "fav") return i.isFav && matchesSearch;
     return i.category === currentFilter && matchesSearch;
   });
 
+  document.getElementById("section-title").textContent = categoryLabels[currentFilter] || "Accounts";
+  document.getElementById("section-count").textContent = `${items.length} of ${vaultItems.length} accounts`;
+  document.querySelectorAll("[data-category]").forEach(button => {
+    const cat = button.dataset.category;
+    const count = vaultItems.filter(i => cat === "all" || (cat === "fav" ? i.isFav : i.category === cat)).length;
+    button.querySelector(".menu-count").textContent = count;
+  });
   if (items.length === 0) {
-    listDiv.innerHTML =
-      '<p style="text-align:center; width:100%; color:#94a3b8; margin-top:50px;">No items found.</p>';
+    listDiv.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><h3>${search ? "No matching accounts" : "No accounts here yet"}</h3><p>${search ? "ရှာဖွေထားတဲ့စာသားနဲ့ ကိုက်ညီတဲ့အချက်အလက် မရှိပါ။" : "ဒီအမျိုးအစားမှာ အချက်အလက် မထည့်ရသေးပါ။"}</p><button class="btn-primary" onclick="${search ? "clearSearch()" : "openModal('add')"}">${search ? "Clear search" : "+ Add New"}</button></div>`;
     return;
   }
 
@@ -431,12 +482,12 @@ function renderList() {
             <thead><tr><th>Category</th><th>Title</th><th>Username</th><th>Action</th></tr></thead><tbody>`;
     items.forEach((item) => {
       const style = styleMap[item.category] || styleMap["other"];
-      tableHTML += `<tr onclick="viewItemDetail('${item.id}')">
+      tableHTML += `<tr onclick="viewItemDetail('${escapeHTML(JSON.stringify(String(item.id)).slice(1, -1).replace(/'/g, '\\u0027'))}')">
                 <td><span class="table-cat-badge" style="background:${style.bg}; color:${style.text}"><i class="fas ${style.icon}"></i> ${style.label}</span></td>
-                <td style="font-weight:600">${item.title}</td><td>${item.username || "-"}</td>
+                <td style="font-weight:600">${escapeHTML(item.title)}</td><td>${escapeHTML(item.username || "-")}</td>
                 <td><div class="table-actions">
-                    <button onclick="event.stopPropagation(); editItem('${item.id}')"><i class="fas fa-pen"></i></button>
-                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" style="color:#ef4444"><i class="fas fa-trash"></i></button>
+                    <button onclick="event.stopPropagation(); editItem('${escapeHTML(JSON.stringify(String(item.id)).slice(1, -1).replace(/'/g, '\\u0027'))}')"><i class="fas fa-pen"></i></button>
+                    <button onclick="event.stopPropagation(); deleteItem('${escapeHTML(JSON.stringify(String(item.id)).slice(1, -1).replace(/'/g, '\\u0027'))}')" style="color:#ef4444"><i class="fas fa-trash"></i></button>
                 </div></td></tr>`;
     });
     tableHTML += `</tbody></table></div>`;
@@ -462,21 +513,21 @@ function renderList() {
             </div>
         </div>
         <div class="card-text-box">
-            <div class="card-title">${item.title}</div>
-            <div class="card-subtitle">${item.username || "No Username"}</div>
+            <div class="card-title">${escapeHTML(item.title)}</div>
+            <div class="card-subtitle">${escapeHTML(item.username || "No Username")}</div>
             <div class="card-cat-tag" style="color:${style.text}">${style.label}</div>
         </div>
     </div>
     
     <!-- ★ ဤနေရာတွင် Class နာမည် card-action-box ဖြစ်နေရပါမည် ★ -->
     <div class="card-action-box">
-        <button onclick="event.stopPropagation(); toggleFav('${item.id}')" class="btn-star ${item.isFav ? "active" : ""}">
+        <button onclick="event.stopPropagation(); toggleFav('${escapeHTML(JSON.stringify(String(item.id)).slice(1, -1).replace(/'/g, '\\u0027'))}')" class="btn-star ${item.isFav ? "active" : ""}">
             <i class="${starClass} fa-star"></i>
         </button>
-        <button onclick="event.stopPropagation(); editItem('${item.id}')">
+        <button onclick="event.stopPropagation(); editItem('${escapeHTML(JSON.stringify(String(item.id)).slice(1, -1).replace(/'/g, '\\u0027'))}')">
             <i class="fas fa-pen"></i>
         </button>
-        <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="btn-del">
+        <button onclick="event.stopPropagation(); deleteItem('${escapeHTML(JSON.stringify(String(item.id)).slice(1, -1).replace(/'/g, '\\u0027'))}')" class="btn-del">
             <i class="fas fa-trash"></i>
         </button>
     </div>
@@ -539,13 +590,17 @@ function viewItemDetail(id) {
   document.getElementById("view-modal").style.display = "flex";
 }
 
-function filterData(cat) {
-  currentFilter = cat;
-  document
-    .querySelectorAll(".menu-item")
-    .forEach((b) => b.classList.remove("active"));
-  event.currentTarget.classList.add("active");
+function clearSearch() {
+  document.getElementById("search-input").value = "";
   renderList();
+}
+function filterData(cat, button) {
+  currentFilter = cat;
+  document.querySelectorAll("[data-category]").forEach(b => {
+    b.classList.toggle("active", b.dataset.category === cat);
+    b.setAttribute("aria-pressed", String(b.dataset.category === cat));
+  });
+  clearSearch();
 }
 
 function saveEntry() {
@@ -626,7 +681,7 @@ function copyText(elementId) {
   });
 }
 
-function openModal(mode) {
+function openModal(mode = "add") {
   document.getElementById("entry-modal").style.display = "flex";
   const title = document.getElementById("modal-title");
   if (mode === "add") {
@@ -636,6 +691,9 @@ function openModal(mode) {
     document.getElementById("inp-user").value = "";
     document.getElementById("inp-pass").value = "";
     document.getElementById("inp-note").value = "";
+    document.getElementById("inp-url").value = "";
+    document.getElementById("inp-pass").type = "password";
+    document.getElementById("inp-cat").value = categoryLabels[currentFilter] && !["all", "fav"].includes(currentFilter) ? currentFilter : "social";
   } else {
     title.innerHTML = '<i class="fas fa-pen-to-square"></i> Edit Account';
   }
@@ -660,13 +718,9 @@ function toggleBlur(el) {
 
 function genPass() {
   document.getElementById("inp-pass").value =
-    Math.random().toString(36).slice(-10) +
-    Math.random().toString(36).slice(-10);
+    Array.from(crypto.getRandomValues(new Uint8Array(20)), n => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*"[n % 70]).join("");
 }
 
-function openModal() {
-  document.getElementById("entry-modal").style.display = "flex";
-}
 function closeModal() {
   document.getElementById("entry-modal").style.display = "none";
 }
@@ -704,6 +758,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function checkAnnouncement() {
   console.log("Checking for announcements..."); // Debugging
 
+  if (typeof db === "undefined") return;
   db.collection("config")
     .doc("news")
     .onSnapshot(
@@ -750,13 +805,13 @@ function closeAnnouncement() {
 
 // --- CHANGE PASSWORD LOGIC ---
 
-function openChangePassModal() {
-  document.getElementById("change-pass-modal").style.display = "flex";
-  // Clear inputs
-  document.getElementById("cp-current").value = "";
-  document.getElementById("cp-new").value = "";
-  document.getElementById("cp-confirm").value = "";
-}
+// function openChangePassModal() {
+//   document.getElementById("change-pass-modal").style.display = "flex";
+//   // Clear inputs
+//   document.getElementById("cp-current").value = "";
+//   document.getElementById("cp-new").value = "";
+//   document.getElementById("cp-confirm").value = "";
+// }
 
 // Modal ပိတ်ရန် (Global closeModal ကို upgrade လုပ်ပါ သို့မဟုတ် ဒါသီးသန့်သုံးပါ)
 // အစ်ကို့ script.js ထဲက closeModal ကို ID လက်ခံအောင် ပြင်ပေးရပါမယ် 👇
@@ -846,3 +901,7 @@ function togglePassVisibility(id) {
 }
 
 // --- CHANGE PASSWORD LOGIC Ends ---
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeModal();
+});
